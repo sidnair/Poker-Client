@@ -1,7 +1,7 @@
 Status: I haven't worked on this project for a while since I've been busy with work, but I've finally gotten around to uploading it. The game should work for heads up play (two players). The code is a little messy since I coded most of this a long time ago when I had less experience.
 
 Known issues:
-	-There is an issue counting pot sizes
+	-There is an issue calculating pot size for pots with more than two people all-in
 	-Disconnects may not be handled gracefully
 
 Desired Features:
