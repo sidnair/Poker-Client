@@ -1,0 +1,13 @@
+Status: I haven't worked on this project for a while since I've been busy with work, but I've finally gotten around to uploading it. The game should work for heads up play (two players). The code is a little messy since I coded most of this a long time ago when I had less experience.
+
+Known issues:
+	-There is an issue counting pot sizes
+	-Disconnects may not be handled gracefully
+
+Desired Features:
+	-Fix for more than two players
+	-Make window size scalable
+
+How to run:
+	-start server with: java GameServer port
+	-start client(s) with: java Lobby; fill in appropriate options from GUI

@@ -1,0 +1,33 @@
+******NEW SESSION*****	Tue Nov 09 14:01:17 EST 2010
+Hand #1
+Seat 1 (SB)/BTN: Sid
+Seat 2 (BB): James
+Pre-flop: (15)
+(2 Players)
+Sid raises to 33 
+James raises to 99 
+Sid calls 66 
+Flop: (198)
+[ 8h, 5d, 9s, ]
+(2 Players)
+James bets 155 
+Sid calls 155 
+Turn: (508)
+[ 8h, 5d, 9s, Ad, ]
+(2 Players)
+James bets 444 
+Sid calls 444 
+River: (1396)
+[ 8h, 5d, 9s, Ad, 3s, ]
+(2 Players)
+James checks 
+Sid bets 1302 
+James calls 1302 
+Showdown: (4000)
+[ 8h, 5d, 9s, Ad, 3s, ]
+(2 Players)
+James shows [Ah, 3c] for Two Pair, Aces and Threes
+Sid shows [Qh, Tc] for Ace High
+James wins 4000
+
+-----
