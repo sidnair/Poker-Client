@@ -9,5 +9,6 @@ Desired Features:
 	-Make window size scalable
 
 How to run:
+	-compile with javac *.java
 	-start server with: java GameServer port
 	-start client(s) with: java Lobby; fill in appropriate options from GUI
