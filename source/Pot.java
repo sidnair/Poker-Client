@@ -295,4 +295,43 @@ public class Pot implements Iterable<Player>, Serializable, Cloneable {
 		}
 		return null;
 	}
+
+	public static ArrayList<Pot> generatePots(HashSet<Player> players) {
+		ArrayList<Pot> pots = new ArrayList<Pot>();
+		
+		if (players.size() == 0) {
+			return pots;
+		}
+		
+		ArrayList<Player> orderedPlayers = new ArrayList<Player>(players);
+		Collections.sort(orderedPlayers, new Comparator<Player>() {
+			@Override
+			public int compare(Player first, Player second) {
+				return first.getLastSize() - second.getLastSize();
+			}
+		});
+		
+		// TODO - check that getLastSize returns the total
+		int lastSize = 0;
+		for (Player p : orderedPlayers) {
+			System.out.println("here");
+			for (Pot pot : pots) {
+				System.out.println("add " + pot.getSize() / pot.getPlayerSet().size());
+				System.out.println(pot.getPlayerSet().size());
+				pot.add(pot.getSize() / pot.getPlayerSet().size());
+				pot.addPlayer(p);
+			}
+			int currentSize = p.getLastSize();
+			if (currentSize != lastSize) {	
+				Pot additionalPot = new Pot();
+				System.out.println("add down " + (currentSize - lastSize));
+				additionalPot.add(currentSize - lastSize);
+				additionalPot.addPlayer(p);
+				pots.add(additionalPot);
+			}
+			lastSize = currentSize;
+		}
+		
+		return pots;
+	}
 }

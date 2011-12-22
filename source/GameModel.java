@@ -716,8 +716,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 								}
 							}
 							if (p.isAllIn() && !(p.equals(largestRaiserYet))) {
-								pots.addAll(pots.get(MAIN_POT_INDEX).calcSidePots(p.getLastSize()));
-								pots = getUniquePots(pots);
+								pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayerSet());
+								// pots.addAll(pots.get(MAIN_POT_INDEX).calcSidePots(p.getLastSize()));
+								// pots = getUniquePots(pots);
 							}
 						}
 					}
@@ -1010,6 +1011,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 	
 	private void addMoneyToPots(int paid, Player player) {
+		/*
 		Pot current = pots.get(MAIN_POT_INDEX);
 		if (player.getLastSize() < current.getLastRaiseSize()) {
 			current.add(paid, player, false);
@@ -1018,6 +1020,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		}
 		pots.addAll(current.calcSidePots(player.getLastSize()));
 		pots = getUniquePots(pots);
+		*/
+		
+		pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayerSet());
 	}
 	
 	/**
