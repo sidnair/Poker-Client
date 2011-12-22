@@ -1,12 +1,10 @@
-Status: I haven't worked on this project for a while since I've been busy with work, but I've finally gotten around to uploading it. The game should work for heads up play (two players). The code is a little messy since I coded most of this a long time ago when I had less experience.
+I started this a long time ago when I had very little experience, so this code
+is pretty bad. Starting work on refactoring it.
 
 Known issues:
-	-There is an issue calculating pot size for pots with more than two people all-in
-	-Disconnects may not be handled gracefully
-
-Desired Features:
-	-Fix for more than two players
-	-Make window size scalable
+	- Disconnects may not be handled gracefully
+  - Must make sure it works for more than two players (all-in situations)
+	- Window size is not scalable
 
 How to run:
 	-compile with javac *.java
