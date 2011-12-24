@@ -457,7 +457,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	
 	private void initPots() {
 		pots.clear();
-		Pot.resetCounter();
 		currentPotIndex = 0;
 		nextPotIndex = 0;
 		pots.add(new Pot());
@@ -722,7 +721,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 								}
 							}
 							if (p.isAllIn() && !(p.equals(largestRaiserYet))) {
-								pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayerSet());
+								pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayers());
 								// pots.addAll(pots.get(MAIN_POT_INDEX).calcSidePots(p.getLastSize()));
 								// pots = getUniquePots(pots);
 							}
@@ -1029,43 +1028,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		*/
 		
 		pots.get(MAIN_POT_INDEX).addPlayer(player);
-		pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayerSet());
+		pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayers());
 	}
-	
-	/**
-	 * Combines pots if they have the same players.
-	 */
-	private ArrayList<Pot> getUniquePots(ArrayList<Pot> pots) {
-		for (Pot pot1 : pots) {
-			for (Pot pot2 : pots) {
-				if (pot1 != pot2) {
-					if (pot1.getPlayerSet().equals(pot2.getPlayerSet())) {
-						pot1.merge(pot2);
-					} else if (pot1.getNumberEligible() == 1 && pot2.getNumberEligible() == 1) {
-						if (pot1.getSize() <= pot2.getSize()) {
-							for (Player p : pot2.getPlayerSet()) {
-								pot1.add(pot1.getSize(), p, true);
-								pot2.remove(pot1.getSize());
-							}
-						} else if (pot1.getSize() > pot2.getSize()) {
-							for (Player p : pot1.getPlayerSet()) {
-								pot2.add(pot2.getSize(), p, true);
-								pot1.remove(pot2.getSize());
-							}
-						} 
-					}
-				}
-			}
-		}
-		ArrayList<Pot> tempPots = new ArrayList<Pot>();
-		for (int i = 0; i < pots.size(); i++) {
-			if (pots.get(i).getSize() > 0 || i == 0) {
-				tempPots.add(pots.get(i));
-			}
-		}
-		return tempPots;
-	}
-	
+		
 	/**
 	 * Allows the model to process the action of a player.
 	 */
