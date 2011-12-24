@@ -1,12 +1,7 @@
 I started this a long time ago when I had very little experience, so this code
 is pretty bad. Starting work on refactoring it.
 
-Known issues:
-	- Disconnects may not be handled gracefully
-  - Must make sure it works for more than two players (all-in situations)
-	- Window size is not scalable
-
-How to run:
-	-compile with javac *.java
-	-start server with: java GameServer port
-	-start client(s) with: java Lobby; fill in appropriate options from GUI
+Running:
+  - run scripts/compile.sh
+  - run scripts/run_client.sh for each client
+  - run scripts/run_server.sh <port_number>

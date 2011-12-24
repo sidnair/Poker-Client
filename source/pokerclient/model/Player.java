@@ -59,7 +59,7 @@ public class Player implements Cloneable, Serializable {
 	/**
 	 * Size of stack.
 	 */
-	private int myStack;
+	private int stack;
 	
 	/**
 	 * Current hand.
@@ -163,7 +163,7 @@ public class Player implements Cloneable, Serializable {
 	 * @return stack size
 	 */
 	public int getStack() {
-		return myStack;
+		return stack;
 	}
 	
 	/**
@@ -183,8 +183,8 @@ public class Player implements Cloneable, Serializable {
 	 * Tops of stack to the max buy-in if the player is shortstacked.
 	 */
 	private void topOff() {
-		if (myStack < GameModel.getInitialStacks()) {
-			add(GameModel.getInitialStacks() - myStack);
+		if (stack < GameModel.getInitialStacks()) {
+			add(GameModel.getInitialStacks() - stack);
 		}
 	}
 	
@@ -287,8 +287,8 @@ public class Player implements Cloneable, Serializable {
 	 * @param aCost amount to put into pot
 	 * @return amount put into the pot
 	 */
-	private int pay(int aCost) {
-		if (myStack < aCost) {
+	public int pay(int aCost) {
+		if (stack < aCost) {
 			try {
 				throw new Exception("Negative stack exception.");
 			} catch (Exception e) {
@@ -296,7 +296,7 @@ public class Player implements Cloneable, Serializable {
 			}
 			//TODO: actual handling makes aCost = myStack, deals with raiseSize, side pots
 		}
-		myStack -= aCost;
+		stack -= aCost;
 		putInPot += aCost;
 		totalPutInPot += aCost;
 		lastSize = aCost + lastSize;
@@ -311,7 +311,7 @@ public class Player implements Cloneable, Serializable {
 	 * @param anAmount amount to add to stack
 	 */
 	public void add(int anAmount) {
-		myStack += anAmount;
+		stack += anAmount;
 	}
 	
 	/**
@@ -448,8 +448,8 @@ public class Player implements Cloneable, Serializable {
 	 */
 	private boolean isLegalRaise(int aSize) {
 		boolean overMin = aSize >= minRaise;
-		boolean hasEnough = myStack + putInPot >= minRaise;
-		boolean putsAllIn = (myStack + putInPot == aSize);
+		boolean hasEnough = stack + putInPot >= minRaise;
+		boolean putsAllIn = (stack + putInPot == aSize);
 		//if (!putsAllIn && myStack == aSize) {
 			//call();
 		//}
@@ -465,7 +465,7 @@ public class Player implements Cloneable, Serializable {
 	 * @return true if the player is all in.
 	 */
 	public boolean isAllIn() {
-		return myStack == 0;
+		return stack == 0;
 	}
 	
 	/**
@@ -477,14 +477,14 @@ public class Player implements Cloneable, Serializable {
 		if (isCheckable()) {
 			check();
 		} else {
-			if (myStack >= toCall) { //if you can make the call normally
+			if (stack >= toCall) { //if you can make the call normally
 				printAction("calls", toCall);
 				pay(toCall);
 				listener.propertyChange(new PropertyChangeEvent(this, 
 						GameModel.PLAYER_CALLED, new Object(), currentRaise));
 			} else { //if we have to deal with side pots
-				printAction("calls", myStack);
-				pay(myStack);
+				printAction("calls", stack);
+				pay(stack);
 				listener.propertyChange(new PropertyChangeEvent(this, 
 						GameModel.PLAYER_CALLED, new Object(), currentRaise));
 			}
@@ -679,7 +679,7 @@ public class Player implements Cloneable, Serializable {
 	}
 	
 	public boolean canRaise() {
-		return toCall < myStack;
+		return toCall < stack;
 	}
 	
 	/**
@@ -689,7 +689,7 @@ public class Player implements Cloneable, Serializable {
 	 * @return true if the player has any chips remaining
 	 */
 	public boolean hasChips() {
-		return myStack > 0;
+		return stack > 0;
 	}
 	
 	public void setLastSize(int aSize) {
@@ -714,6 +714,10 @@ public class Player implements Cloneable, Serializable {
 
 	public void setTotalPutInPot(int totalPutInPot) {
 		this.totalPutInPot = totalPutInPot;
+	}
+
+	public void setStack(int stack) {
+		this.stack = stack;
 	}
 	
 }
