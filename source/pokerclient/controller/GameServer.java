@@ -36,7 +36,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	public static final int DEFAULT_BB = 10;
 	public static final int DEFAULT_SB = 5;
 	public static final int DEFAULT_ANTE = 0;
-	public static final int DEFAULT_STACK = 20;
+	public static final int DEFAULT_STACK = 2000;
 	public static final int DEFAULT_FRAME_WIDTH = 400;
 	public static final int DEFAULT_FRAME_HEIGHT = 400;
     

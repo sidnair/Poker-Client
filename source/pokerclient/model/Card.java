@@ -194,6 +194,7 @@ public class Card implements Serializable, Cloneable {
 			case VISIBLE:
 				path += suit.toString().toLowerCase() + "/";
 				path += valString() + ".jpg";
+				System.out.println(path);
 				break;
 			case HIDDEN:
 				path += "hidden.jpg";

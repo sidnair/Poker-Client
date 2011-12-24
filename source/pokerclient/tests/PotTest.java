@@ -29,9 +29,9 @@ public class PotTest {
 
 	@Test
 	public void testSinglePot() {
-		players.get(0).setLastSize(100);
-		players.get(1).setLastSize(100);
-		players.get(2).setLastSize(100);
+		players.get(0).setTotalPutInPot(100);
+		players.get(1).setTotalPutInPot(100);
+		players.get(2).setTotalPutInPot(100);
 		
 		ArrayList<Pot> pots = Pot.generatePots(new HashSet<Player>(players));
 		assertEquals(1, pots.size());
@@ -40,9 +40,9 @@ public class PotTest {
 	
 	@Test
 	public void testMultiplePots() {
-		players.get(0).setLastSize(200);
-		players.get(1).setLastSize(100);
-		players.get(2).setLastSize(100);
+		players.get(0).setTotalPutInPot(200);
+		players.get(1).setTotalPutInPot(100);
+		players.get(2).setTotalPutInPot(100);
 		
 		ArrayList<Pot> pots = Pot.generatePots(new HashSet<Player>(players));
 		assertEquals(2, pots.size());

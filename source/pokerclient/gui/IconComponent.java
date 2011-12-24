@@ -63,7 +63,7 @@ public class IconComponent extends JComponent implements Rescalable {
 			System.err.println("Error creating URL for image.");
 			e.printStackTrace();
 		}
-		this.setBounds(0, 0, myIcon.getIconWidth(), myIcon.getIconWidth());
+		this.setBounds(0, 0, myIcon.getIconWidth(), myIcon.getIconHeight());
 		this.setPreferredSize(new Dimension(myIcon.getIconWidth(), 
 				myIcon.getIconHeight()));
 		currentPath = path;
@@ -109,15 +109,15 @@ public class IconComponent extends JComponent implements Rescalable {
 	 */
 	public void setImage(String path) {
 		if (!path.equals(currentPath)) {
-			try {
-				defaultSizeIcon = new ImageIcon(this.getClass().getResource(path));
-			} catch (NullPointerException npe) {
-				defaultSizeIcon = new ImageIcon(this.getClass().getResource(currentPath));
-				//myIcon = new ImageIcon(this.getClass().getResource(currentPath));
-			}
-			currentPath = path;
+				try {
+					URL url = Utils.pathToURL(path);
+					defaultSizeIcon = new ImageIcon(url);
+					currentPath = path;
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 			callRescale();
-
 		} else {
 			callRescale();
 		}

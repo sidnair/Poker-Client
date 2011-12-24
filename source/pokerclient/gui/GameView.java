@@ -414,7 +414,7 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 		cardsFlipped = false;
 		this.bigBlind = bigBlind;
 		totalScale = 1;
-//		initSounds();
+		initSounds();
 		this.godMode = godMode;
 	}
 
@@ -469,7 +469,7 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 		chatPanel = makePanel(new int[][]{{TEXT_X, TEXT_Y}});
 		chatPanel.add(chatScrollPane);
 		GUI.add(chatPanel, BOX_LAYER);
-		bg = new IconComponent("images/bg.jpg");
+		bg = new IconComponent(MEDIA_ROOT + "images/bg.jpg");
 		bgPanel = makePanel(new int[][] {{0 ,0}});
 		bgPanel.add(bg);
 		GUI.add(bgPanel, BACKGROUND_LAYER);
@@ -490,9 +490,13 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 
         displayFrame.setResizable(false);
         displayFrame.setVisible(true);
+        
     	displayFrame.addComponentListener(new ComponentAdapter() {
     		public void componentResized(ComponentEvent evt) {
+    			
+//    			displayFrame.setSize(1024, 800);
 				//maintains aspect ratio
+    			// aspect ratio is messed up... w is 11, h is 2147483647
 				displayFrame.setSize(displayFrame.getWidth(), (int) (displayFrame.getWidth() * aspectRatio));
 				
 		        double ratio = 1;
@@ -981,21 +985,6 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 				p.getName().equals(this.playerName) || godMode, folded,
 				Integer.toString(p.getStack())));
 	}
-	
-    /** 
-     * Returns an ImageIcon, or null if the path was invalid. 
-     * @path directory to use
-     * */
-    protected ImageIcon createImageIcon(String path) {
-    	path = new File(path).getPath();
-        java.net.URL imgURL = this.getClass().getResource(path);
-        if (imgURL != null) {
-            return new ImageIcon(imgURL);
-        } else {
-            System.err.println("Couldn't find file: " + path);
-            return null;
-        }
-    }
     
     private boolean isGUIUpdate(String s) {
     	return s.equals(GameView.GENERATE_GUI_START_OF_TURN) ||

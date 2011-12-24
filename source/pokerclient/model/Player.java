@@ -193,7 +193,6 @@ public class Player implements Cloneable, Serializable {
 	 */
 	public void resetStreet() {
 		inHand = true;
-		totalPutInPot += putInPot;
 		putInPot = 0;
 		actionClosed = false;
 		acted = false;
@@ -299,6 +298,7 @@ public class Player implements Cloneable, Serializable {
 		}
 		myStack -= aCost;
 		putInPot += aCost;
+		totalPutInPot += aCost;
 		lastSize = aCost + lastSize;
 		listener.propertyChange(new PropertyChangeEvent(this, 
 				GameModel.MONEY_PAID, new Object(), new Integer(aCost)));
@@ -692,10 +692,6 @@ public class Player implements Cloneable, Serializable {
 		return myStack > 0;
 	}
 	
-	public void resetLastSize() {
-		lastSize = 0;
-	}
-	
 	public void setLastSize(int aSize) {
 		lastSize = aSize;
 	}
@@ -708,17 +704,16 @@ public class Player implements Cloneable, Serializable {
 		return lastActionType;
 	}
 	
-	/**
-	 * Returns the amount the player has put into the pot thus far.
-	 * 
-	 * @return amount the player has put into the pot thus far.
-	 */
 	public int getPutInPot() {
 		return putInPot;
 	}
 	
 	public int getTotalPutInPot() {
 		return totalPutInPot;
+	}
+
+	public void setTotalPutInPot(int totalPutInPot) {
+		this.totalPutInPot = totalPutInPot;
 	}
 	
 }

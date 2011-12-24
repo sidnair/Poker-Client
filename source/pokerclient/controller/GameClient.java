@@ -77,8 +77,11 @@ public class GameClient implements PropertyChangeListener, Runnable {
         }
 		while (true) {
 			try {
-				PropertyChangeEvent pce = (PropertyChangeEvent) in.readObject();
-//				view.propertyChange(pce);
+				Object o = in.readObject();
+				System.out.println(o);
+				PropertyChangeEvent pce = (PropertyChangeEvent) o;
+//				PropertyChangeEvent pce = (PropertyChangeEvent) in.readObject();
+				view.propertyChange(pce);
 			} catch (IOException e) {
 				// TODO - terminate?
 				e.printStackTrace();

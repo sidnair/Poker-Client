@@ -128,13 +128,7 @@ public class Pot implements Iterable<Player>, Serializable, Cloneable {
 		return id;
 	}	
 	
-	/**
-	 * Returns a list of all the additional side pots resulting from the 
-	 * attempted raise.
-	 * 
-	 * @param attemptedSize size of the attempted raise
-	 * @return list of all the new side pots created
-	 */
+	/*
 	public ArrayList<Pot> calcSidePots(int attemptedSize) {
 		ArrayList<Pot> potList = new ArrayList<Pot>();
 		Pot tempPot = new Pot();
@@ -160,6 +154,7 @@ public class Pot implements Iterable<Player>, Serializable, Cloneable {
 		potList.add(tempPot);
 		return potList;
 	}
+	*/
 	
 	/**
 	 * Returns a set of all players eligible for the pot. 
@@ -274,9 +269,9 @@ public class Pot implements Iterable<Player>, Serializable, Cloneable {
 		return new Comparator<Player>() {
 			@Override
 			public int compare(Player one, Player two) {
-				if (one.getLastSize() > two.getLastSize()) {
+				if (one.getTotalPutInPot() > two.getTotalPutInPot()) {
 					return -1;
-				} else if (one.getLastSize() < two.getLastSize()) {
+				} else if (one.getTotalPutInPot() < two.getTotalPutInPot()) {
 					return 1;
 				}
 				return 0;
@@ -298,41 +293,81 @@ public class Pot implements Iterable<Player>, Serializable, Cloneable {
 	}
 
 	public static ArrayList<Pot> generatePots(HashSet<Player> players) {
-		ArrayList<Pot> pots = new ArrayList<Pot>();
 		
+		// Have at least a main pot.
 		if (players.size() == 0) {
+			ArrayList<Pot> pots = new ArrayList<Pot>();
+			pots.add(new Pot());
 			return pots;
 		}
 		
+		boolean isAllIn = false;
+		for (Player p : players) {
+			if (p.isAllIn()) {
+				isAllIn = true;
+				break;
+			}
+		}
+		
+		ArrayList<Pot> pots;
+		if (isAllIn) {
+			pots = generatePotsWithSidePots(players);
+		} else {
+			pots = generatePotsWithoutSidePots(players);
+		}
+		
+		// Have at least a main pot.
+		if (pots.size() == 0) {
+			pots.add(new Pot());
+		}
+		
+		return pots;
+	}
+
+	private static ArrayList<Pot> generatePotsWithoutSidePots(
+			HashSet<Player> players) {
+		ArrayList<Pot> pots = new ArrayList<Pot>();
+		Pot pot = new Pot();
+		pots.add(pot);
+		for (Player p : players) {
+			if (p.getTotalPutInPot() == 0) {
+				continue;
+			}
+			pot.add(p.getTotalPutInPot());
+			pot.addPlayer(p);
+		}
+		
+		return pots;
+	}
+
+	private static ArrayList<Pot> generatePotsWithSidePots(HashSet<Player> players) {
+		ArrayList<Pot> pots = new ArrayList<Pot>();
 		ArrayList<Player> orderedPlayers = new ArrayList<Player>(players);
 		Collections.sort(orderedPlayers, new Comparator<Player>() {
 			@Override
 			public int compare(Player first, Player second) {
-				return first.getLastSize() - second.getLastSize();
+				return first.getTotalPutInPot() - second.getTotalPutInPot();
 			}
 		});
 		
-		// TODO - check that getLastSize returns the total
 		int lastSize = 0;
 		for (Player p : orderedPlayers) {
-			System.out.println("here");
+			if (p.getTotalPutInPot() == 0) {
+				continue;
+			}
 			for (Pot pot : pots) {
-				System.out.println("add " + pot.getSize() / pot.getPlayerSet().size());
-				System.out.println(pot.getPlayerSet().size());
 				pot.add(pot.getSize() / pot.getPlayerSet().size());
 				pot.addPlayer(p);
 			}
-			int currentSize = p.getLastSize();
-			if (currentSize != lastSize) {	
+			int currentSize = p.getTotalPutInPot();
+			if (currentSize != lastSize) {
 				Pot additionalPot = new Pot();
-				System.out.println("add down " + (currentSize - lastSize));
 				additionalPot.add(currentSize - lastSize);
 				additionalPot.addPlayer(p);
 				pots.add(additionalPot);
 			}
 			lastSize = currentSize;
 		}
-		
 		return pots;
 	}
 }

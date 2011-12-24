@@ -1028,6 +1028,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		pots = getUniquePots(pots);
 		*/
 		
+		pots.get(MAIN_POT_INDEX).addPlayer(player);
 		pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayerSet());
 	}
 	
