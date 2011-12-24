@@ -931,7 +931,7 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 		if (total) {
 			temp = p.getTotalPutInPot();
 		} else {
-			temp = p.getPutInPot();
+			temp = p.getPutInPotOnStreet();
 		}
 		if (temp != 0) {
 			raiseSizes.get(i).setText(Integer.toString(temp));

@@ -15,6 +15,7 @@ public class PotTest {
 	
 	private static final int NUM_PLAYERS = 3;
 	private static final int DEFAULT_STACK = 2000;
+	private static final int DEFAULT_BB = 10;
 	
 	private ArrayList<Player> players;
 	
@@ -24,8 +25,7 @@ public class PotTest {
 	public void setUp() {
 		players = new ArrayList<Player>();
 		for (int i = 0; i < NUM_PLAYERS; i++) {
-			Player p = new Player(names[i], null, null);
-			p.setStack(DEFAULT_STACK);
+			Player p = new Player(names[i], null, DEFAULT_STACK, DEFAULT_BB, null);
 			players.add(p);
 		}
 	}
@@ -54,5 +54,8 @@ public class PotTest {
 		assertEquals(1, pots.size());
 		assertEquals(400, pots.get(0).getSize());
 	}
+	
+	// TODO - write more thorough tests. The expected behavior of side pots
+	// should be established first, though.
 
 }

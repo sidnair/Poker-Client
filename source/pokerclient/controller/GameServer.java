@@ -17,6 +17,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -45,6 +46,8 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	private GameModel model;
 	private JTextArea messageDisplay;     
 	private boolean shouldScroll;
+	
+	private ReentrantLock workersLock = new ReentrantLock();
 	
 	public GameServer(int port, String frameName) {
 		initModel(port);
@@ -187,12 +190,14 @@ public class GameServer implements PropertyChangeListener, Runnable {
         
         String name = (String) (in.readObject());
         String path = (String) (in.readObject());
-        Player player = new Player(name, path, model);
+        Player player = new Player(name, path, DEFAULT_STACK, DEFAULT_BB, model);
         
         System.out.println(name + " \t" + path);
         
         GameClientWorker w = new GameClientWorker(in, out, player, this);
+        workersLock.lock();
         workers.add(w);
+        workersLock.unlock();
         new Thread(w).start();
         model.addPlayer(player);
 	}
@@ -215,6 +220,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
+		workersLock.lock();
 		if (isGameModelMessage(evt.getPropertyName())) {
 			for (GameClientWorker gcw : workers) {
 				gcw.sendChange(evt);
@@ -224,6 +230,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 		} else if (evt.getPropertyName().equals(GameServer.REMOVE_ABSENT_PLAYERS)) {
 			removeAbsentPlayers(evt);
 		}
+		workersLock.unlock();
 	}
 
 	private void removePlayer(PropertyChangeEvent evt) {
@@ -231,7 +238,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 			GameClientWorker gcw = workers.get(i);
 			Player gcwPlayer = gcw.getPlayer();
 			if (gcwPlayer.equals((Player) evt.getNewValue())) {
-				model.removePlayer(gcwPlayer);
+				model.sitOutPlayer(gcwPlayer);
 				// TODO - verify that these last two steps are okay.
 				gcw.setPlaying(false);
 				workers.remove(i);

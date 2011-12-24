@@ -66,7 +66,6 @@ public class GameState implements Serializable {
 	 */
 	public GameState(ArrayList<Player> allPlayers, ArrayList<Pot> pots, Board board) {
 		nullActive = true;
-		this.allPlayers = allPlayers;
 		this.allPlayers = new ArrayList<Player>();
 		foldedStatuses = new ArrayList<Boolean>();
 		for (Player p : allPlayers) {

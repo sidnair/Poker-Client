@@ -70,7 +70,7 @@ public class HandRanker implements Serializable {
 	 * @param board board which the hand can use
 	 * @return name of the hand
 	 */
-	public String getHandName(Hand hand, Board board) {
+	public static String getHandName(Hand hand, Board board) {
 		return EvalHandEvaluator.nameHand(makeEvalHand(hand, board));
 	}
 	
