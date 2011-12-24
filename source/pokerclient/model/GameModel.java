@@ -956,9 +956,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 				Action action = (Action) evt.getNewValue();
 				if (p.getName().equals(action.getPlayerName())) {
 					if (action.getAction().equals(Action.ActionType.RAISE)) {
-						p.raiseTo(action.getSize(), false);
+						p.raise(action.getSize());
 					} else if (action.getAction().equals(Action.ActionType.BET)) {
-						p.raiseTo(action.getSize(), true);
+						p.bet(action.getSize());
 					} else if (action.getAction()
 							.equals(Action.ActionType.FOLD)) {
 						p.fold();

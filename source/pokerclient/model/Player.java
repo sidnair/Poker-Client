@@ -20,7 +20,7 @@ public class Player implements Cloneable, Serializable {
 	/**
 	 * Used to create and utilize conditions.
 	 */
-	private Lock myLock;
+	private Lock lock;
 	
 	/**
 	 * Condition player waits for when taking action.
@@ -122,11 +122,16 @@ public class Player implements Cloneable, Serializable {
 		this.avatarPath = avatarPath;
 		this.listener = listener;
 		this.startingStack = startingStack;
-		this.defaultBigBlind = defaultBigBlind;
 		this.stack = startingStack;
-		myLock = new ReentrantLock();
-		actionTaken = myLock.newCondition();
+		setBigBlind(defaultBigBlind);
+		lock = new ReentrantLock();
+		actionTaken = lock.newCondition();
 		resetHand();
+	}
+
+	private void setBigBlind(int defaultBigBlind) {
+		this.defaultBigBlind = defaultBigBlind;
+		minRaise = defaultBigBlind * 2;
 	}
 	
 	/**
@@ -248,13 +253,13 @@ public class Player implements Cloneable, Serializable {
 			return;
 		}
 		
-		myLock.lock();
+		lock.lock();
 		try {
 			actionTaken.await();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} finally {
-			myLock.unlock();
+			lock.unlock();
 		}
 	}
 	
@@ -262,26 +267,33 @@ public class Player implements Cloneable, Serializable {
 	 * Notifies the player when an action has been taken.
 	 */
 	public void notifyPlayer() {
-		myLock.lock();
+		lock.lock();
 		try {
 			actionTaken.signalAll();
 		} finally {
-			myLock.unlock();
+			lock.unlock();
 		}
+	}
+	
+	public void bet(int size) {
+		raiseTo(size, true);
+	}
+	
+	public void raise(int size) {
+		raiseTo(size, false);
 	}
 
 	/**
-	 * Allows a player to raise.
+	 * Handles the logic for raising and betting, together since they are so
+	 * similar.
 	 *  
 	 * @param raiseSize amount to raise to
-	 * @param betting whether the raise is a raise or a bet
+	 * @param betting whether this is a raise or a bet
 	 * @return amount player raised by, which is how much the player needs to 
 	 * pay
 	 */
-	public void raiseTo(int raiseSize, boolean betting) {
-		if (!isLegalRaise(raiseSize)) {
-			return;
-		}
+	private void raiseTo(int raiseSize, boolean betting) {
+		assert isLegalRaise(raiseSize);
 		
 		currentRaise = raiseSize;
 		printAction(betting ? "bets" : "raises to", currentRaise);
@@ -315,13 +327,6 @@ public class Player implements Cloneable, Serializable {
 	 */
 	private boolean isLegalRaise(int size) {
 		return size >= getMinBet();
-		
-		/*
-		boolean overMin = aSize >= minRaise;
-		boolean hasEnough = stack + putInPotOnStreet >= minRaise;
-		boolean putsAllIn = (stack + putInPotOnStreet == aSize);
-		return (overMin && hasEnough) || putsAllIn;
-		*/
 	}
 	
 	/**
@@ -330,17 +335,15 @@ public class Player implements Cloneable, Serializable {
 	 * @return amount required to call
 	 */
 	public void call() {
-		if (isCheckable()) {
-			check();
-		} else {
-			int willCall = Math.min(stack, toCall);
-			pay(willCall);
-			printAction("calls", willCall);
-			// TODO - curentRaise?
-			listener.propertyChange(new PropertyChangeEvent(this, 
-					GameModel.PLAYER_CALLED, new Object(), currentRaise));
-			takeAction(true, true);
-		}
+		assert !isCheckable();
+		
+		int willCall = Math.min(stack, toCall);
+		pay(willCall);
+		printAction("calls", willCall);
+		// TODO - curentRaise?
+		listener.propertyChange(new PropertyChangeEvent(this, 
+				GameModel.PLAYER_CALLED, new Object(), currentRaise));
+		takeAction(true, true);
 	}
 	
 	/**
@@ -349,8 +352,8 @@ public class Player implements Cloneable, Serializable {
 	 * @return amount player has to call, which is always 0
 	 */
 	public void check() {
-		// TODO - verify that this can be removed.
-		// pay(0);
+		assert isCheckable();
+		
 		printAction("checks");
 		takeAction(true, true);
 		listener.propertyChange(new PropertyChangeEvent(this, 
@@ -543,7 +546,6 @@ public class Player implements Cloneable, Serializable {
 		return stack;
 	}
 	
-	
 	/**
 	 * True if the player is the big blind.
 	 * 
@@ -647,8 +649,7 @@ public class Player implements Cloneable, Serializable {
 	public boolean isInHand() {
 		return inHand;
 	}
-	
-	
+
 	/**
 	 * Converts the action the player has taken to a string and tells the 
 	 * listener to reflect this change in a chat update. This method is used
@@ -681,4 +682,5 @@ public class Player implements Cloneable, Serializable {
 	public boolean isAllIn() {
 		return stack == 0;
 	}
+	
 }
