@@ -42,9 +42,6 @@ import pokerclient.model.Pot;
 
 /**
  * View of the game of poker.
- * 
- * @author Sid Nair
- *
  */
 public class GameView extends AbstractView<GameModel> implements Runnable {
 	
@@ -322,8 +319,6 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 	
 	public static final String GENERATE_GUI_SHOWDOWN = "Generate GUI - showdown";
 	
-	public static final String GENERATE_GUI_SINGLE_PLAYER_SHOWDOWN = "Generate GUI - uncontested showdown";
-	
 	public static final String GENERATE_GUI_END_OF_HAND = "Generate GUI - end of hand";
 	
 	public static final String GENERATE_GUI_ALL_IN = "Generate GUI - everyone's all-in";
@@ -376,8 +371,6 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 	
 	private boolean godMode;
 	
-	
-	private int oldWidth;
 	private double aspectRatio;
 	private double totalScale;
 	
@@ -983,7 +976,6 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
     			s.equals(GameView.GENERATE_GUI_ALL_IN) ||
     			s.equals(GameView.GENERATE_GUI_START_OF_STREET) ||
     			s.equals(GameView.GENERATE_GUI_SHOWDOWN) ||
-    			s.equals(GameView.GENERATE_GUI_SINGLE_PLAYER_SHOWDOWN) ||
     			s.equals(GameView.GENERATE_GUI_END_OF_HAND) || 
     			s.equals(GameView.GENERATE_GUI_PLAYER_JOINED);
     }
@@ -991,51 +983,36 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
     /**
      * Updates the view when a certain property change event is propagated.
      */
-	public void propertyChange(PropertyChangeEvent anEvent) {
-		String eventName = anEvent.getPropertyName();
+	public void propertyChange(PropertyChangeEvent event) {
+		String eventName = event.getPropertyName();
 		if (isGUIUpdate(eventName)) {
-			generateGUI((GameState) anEvent.getNewValue(), eventName);
-		} else if (anEvent.getPropertyName().equals(GameView.UPDATE_CHAT)) {
-			updateChatBox((String) anEvent.getNewValue());
-        } else if (anEvent.getPropertyName().equals(GameView.PLAYER_ACTION)) {
+			generateGUI((GameState) event.getNewValue(), eventName);
+		} else if (eventName.equals(GameView.UPDATE_CHAT)) {
+			updateChatBox((String) event.getNewValue());
+        } else if (eventName.equals(GameView.PLAYER_ACTION)) {
         	actionLabel.setVisible(false);
-        	listener.propertyChange(anEvent);
-        } else if (anEvent.getPropertyName().equals(GameView.RAISE_MADE)) {
+        	listener.propertyChange(event);
+        } else if (eventName.equals(GameView.RAISE_MADE)) {
         	raiseSound.play();
-        } else if (anEvent.getPropertyName().equals(GameView.BET_MADE)) {
+        } else if (eventName.equals(GameView.BET_MADE)) {
         	betSound.play();
-        } else if (anEvent.getPropertyName().equals(GameView.CHECK_MADE)) {
+        } else if (eventName.equals(GameView.CHECK_MADE)) {
         	checkSound.play();
-        } else if (anEvent.getPropertyName().equals(GameView.CALL_MADE)) {
+        } else if (eventName.equals(GameView.CALL_MADE)) {
         	callSound.play();
-        } else if (anEvent.getPropertyName().equals(GameView.FOLD_MADE)) {
+        } else if (eventName.equals(GameView.FOLD_MADE)) {
         	foldSound.play();
-        }
-    		/*((AudioClip) anEvent.getNewValue()).play();
-        	Action.ActionType action = (Action.ActionType) 
-    		((Action) anEvent.getNewValue()).getAction();
-	    	if (action.equals(Action.ActionType.FOLD)) {
-	    		foldSound.play();
-	    	} else if (action.equals(Action.ActionType.BET)) {
-	    		betSound.play();
-	    	} else if (action.equals(Action.ActionType.RAISE)) {
-	    		raiseSound.play();
-	    	}  else if (action.equals(Action.ActionType.CALL)) {
-	    		callSound.play();
-	    	}  else if (action.equals(Action.ActionType.CHECK)) {
-	    		checkSound.play();
-	    	} */
-		else if (anEvent.getPropertyName().equals(GameView.TIMER_EXPIRED)) {
+        } else if (eventName.equals(GameView.TIMER_EXPIRED)) {
         	if (isActive) {
         		fold.doClick();
         	}
         	//TODO: sometimes it is the other player's turn for a split second, i think
-        } else if (anEvent.getPropertyName().equals(GameView.TIMER_NOTIFICATION)) {
+        } else if (eventName.equals(GameView.TIMER_NOTIFICATION)) {
     		timerNotificationSound.play();
-        } else if (anEvent.getPropertyName().equals(GameView.UPDATE_BTN)) {
+        } else if (eventName.equals(GameView.UPDATE_BTN)) {
         	buttonGraphic.setBounds(
-        			buttonCoords[Integer.parseInt(anEvent.getNewValue().toString())][0], 
-        			buttonCoords[Integer.parseInt(anEvent.getNewValue().toString())][1],  
+        			buttonCoords[Integer.parseInt(event.getNewValue().toString())][0], 
+        			buttonCoords[Integer.parseInt(event.getNewValue().toString())][1],  
         			buttonGraphic.getWidth(), buttonGraphic.getHeight());
         }
 	}

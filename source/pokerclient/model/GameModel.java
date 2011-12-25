@@ -27,20 +27,11 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private static final long serialVersionUID = -3228212823720315361L;
 
 	private GameState currentState;
-
-	private GameState oldState;
-
-	private final static int START_OF_TURN = 0;
-
-	private final static int START_OF_STREET = 1;
-
-	private final static int SHOWDOWN = 2;
-
-	private final static int END_OF_HAND = 3;
-
-	private final static int ALL_IN = 4;
-
-	private final static int PLAYER_JOINED = 5;
+	
+	private enum Notification {
+		START_OF_TURN, START_OF_STREET, SHOWDOWN, END_OF_HAND, ALL_IN,
+		PLAYER_JOINED;
+	};
 
 	/**
 	 * Index of button
@@ -181,7 +172,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		printer = new HHPrinter(Integer.toString(id));
 		printer.add("******NEW SESSION*****" + "\t" + new Date().toString()
 				+ "\n");
-		oldState = new GameState(allPlayers.getPlayersCopy(), pots, board);
 	}
 
 	private void initLock() {
@@ -219,7 +209,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			System.err.println("Name " + newPlayer.getName() + " was already"
 					+ "taken. Seating was denied");
 		}
-		updateGUI(PLAYER_JOINED);
+		updateGUI(Notification.PLAYER_JOINED);
 	}
 
 	/**
@@ -294,7 +284,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			p.resetHand();
 		}
 		board.initBoard();
-		updateGUI(END_OF_HAND);
+		updateGUI(Notification.END_OF_HAND);
 	}
 
 	/**
@@ -351,14 +341,14 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			// are all in
 
 			if (isEveryoneAllIn()) {
-				updateGUI(ALL_IN);
+				updateGUI(Notification.ALL_IN);
 				if (isHandContested()) {
 					pause(GameSettings.ALL_IN_PAUSE -
 							GameSettings.END_OF_STREET_PAUSE);
 				}
 			}
 			dealStreet(numCards);
-			updateGUI(START_OF_STREET);
+			updateGUI(Notification.START_OF_STREET);
 			updateChat(streetToString(name));
 			playStreet(0, false, isFlop);
 			pause(GameSettings.END_OF_STREET_PAUSE);
@@ -443,7 +433,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	public void showDown() {
 		if (allPlayers.inHandCount() > 1) {
-			updateGUI(SHOWDOWN);
+			updateGUI(Notification.SHOWDOWN);
 			updateChat(streetToString("Showdown"));
 			for (Pot pot : pots) {
 				ArrayList<Player> winners = HandRanker.findWinner(pot, board);
@@ -549,7 +539,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		if (!allCalled || !p.hasActed()) {
 			p.setActive(true);
 			p.updateSizing(currentRaise, oldRaise);
-			updateGUI(START_OF_TURN, p);
+			updateGUI(Notification.START_OF_TURN, p);
 			p.act();
 
 			lock.lock();
@@ -699,49 +689,44 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		return allPlayers.size();
 	}
 
-	private void updateGUI(int updateType, Player active) {
-		if (updateType == GameModel.START_OF_TURN) {
-			currentState = new GameState(allPlayers.getPlayersCopy(), active,
-					pots, board, allPlayers.indexOf(active));
+	private void updateGUI(Notification updateType, Player active) {
+		GameState oldState = currentState;
+		currentState = new GameState(allPlayers.getPlayersCopy(), active,
+				pots, board, allPlayers.indexOf(active));
+		if (updateType == Notification.START_OF_TURN) {
 			firePropertyChange(GameView.GENERATE_GUI_START_OF_TURN, oldState,
 					currentState);
 		} else {
-			try {
-				throw new Exception("Not a legal update");
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(-1);
-			}
+			throw new AssertionError("Not a legal update");
 		}
 	}
 
-	private void updateGUI(int updateType) {
+	private void updateGUI(Notification updateType) {
+		GameState oldState = currentState;
 		currentState = new GameState(allPlayers.getPlayersCopy(), pots, board);
-		if (updateType == GameModel.ALL_IN) {
+		switch (updateType) {
+		case ALL_IN:
 			firePropertyChange(GameView.GENERATE_GUI_ALL_IN, oldState,
 					currentState);
-		} else if (updateType == GameModel.START_OF_STREET) {
+			break;
+		case START_OF_STREET:
 			firePropertyChange(GameView.GENERATE_GUI_START_OF_STREET, oldState,
 					currentState);
-		} else if (updateType == GameModel.SHOWDOWN) {
+			break;
+		case SHOWDOWN:
 			firePropertyChange(GameView.GENERATE_GUI_SHOWDOWN, oldState,
 					currentState);
-		} else if (updateType == GameModel.SHOWDOWN) {
-			firePropertyChange(GameView.GENERATE_GUI_SINGLE_PLAYER_SHOWDOWN,
-					oldState, currentState);
-		} else if (updateType == GameModel.END_OF_HAND) {
+			break;
+		case END_OF_HAND:
 			firePropertyChange(GameView.GENERATE_GUI_END_OF_HAND, oldState,
 					currentState);
-		} else if (updateType == GameModel.PLAYER_JOINED) {
-			// firePropertyChange(GameView.GENERATE_GUI_PLAYER_JOINED, oldState,
-			// currentState);
-		} else {
-			try {
-				throw new Exception("Not a legal update");
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(-1);
-			}
+			break;
+		case PLAYER_JOINED:
+//			 firePropertyChange(GameView.GENERATE_GUI_PLAYER_JOINED, oldState,
+//					 currentState);
+			break;
+		default:
+			throw new AssertionError("Not a legal update.");
 		}
 	}
 
