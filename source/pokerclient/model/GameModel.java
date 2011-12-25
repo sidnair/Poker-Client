@@ -150,11 +150,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private ArrayList<Pot> pots;
 
 	/**
-	 * Initial stack size.
-	 */
-	private int initialStackSize;
-
-	/**
 	 * Index of main pot in the array of pots.
 	 */
 	public static final int MAIN_POT_INDEX = 0;
@@ -237,7 +232,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		this.bigBlind = bigBlind;
 		this.smallBlind = smallBlind;
 		this.ante = ante;
-		this.initialStackSize = initialStackSize;
 		flop = this.new Street(3, "Flop", true);
 		turn = this.new Street(1, "Turn", false);
 		river = this.new Street(1, "River", false);
@@ -975,14 +969,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 
 	private void addMoneyToPots(int paid, Player player) {
-		/*
-		 * Pot current = pots.get(MAIN_POT_INDEX); if (player.getLastSize() <
-		 * current.getLastRaiseSize()) { current.add(paid, player, false); }
-		 * else { current.add(paid, player, true); }
-		 * pots.addAll(current.calcSidePots(player.getLastSize())); pots =
-		 * getUniquePots(pots);
-		 */
-
 		pots.get(MAIN_POT_INDEX).addPlayer(player);
 		pots = Pot.generatePots(pots.get(MAIN_POT_INDEX).getPlayers());
 	}
