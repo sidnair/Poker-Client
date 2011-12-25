@@ -17,7 +17,7 @@ public class GameClient implements PropertyChangeListener, Runnable {
 	private static final String PASS = "supersecret";
 	
 	// TODO - the server should be setting this
-	private static final int TIME_BANK = 50000;
+	private static final int TIME_BANK = 500000;
 	private static final String USAGE =
 			"Usage: java GameClient host port playerName pathToAvatar";	
 	private Socket socket;

@@ -19,14 +19,10 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -154,10 +150,6 @@ public class GameView extends AbstractView<GameModel> implements Runnable {
 	 * Layer to use for the boxes.
 	 */
 	private static final Integer BOX_LAYER = new Integer(1);
-	
-    private static final double DEFAULT_TABLE_WIDTH = 798; //after subtracting 10
-    
-    private static final double DEFAULT_TABLE_HEIGHT = 572; //after subtracting 10
 	
 	/**
 	 * Top row of table.

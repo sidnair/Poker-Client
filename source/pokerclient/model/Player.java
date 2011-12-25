@@ -56,7 +56,7 @@ public class Player implements Cloneable, Serializable {
 	/**
 	 * Current hand.
 	 */
-	private Hand myHand;
+	private Hand hand;
 	
 	/**
 	 * True if player has not folded for a given street.
@@ -132,7 +132,8 @@ public class Player implements Cloneable, Serializable {
 	public void resetHand() {
 		currentRaise = settings.getBigBlind();
 		minRaise = settings.getBigBlind() * 2;
-		myHand = new Hand();
+		hand = new Hand();
+		inHand = true;
 		totalPutInPot = 0;
 		isBigBlind = false;
 		isSmallBlind = false;
@@ -146,7 +147,6 @@ public class Player implements Cloneable, Serializable {
 	public void resetStreet() {
 		putInPotOnStreet = 0;
 		currentRaise = 0;
-		inHand = true;
 		actionClosed = false;
 		acted = false;
 	}
@@ -360,7 +360,7 @@ public class Player implements Cloneable, Serializable {
 	public void fold() {
 		printAction("folds");
 		takeAction(true, false);
-		myHand.fold();
+		hand.fold();
 		listener.propertyChange(new PropertyChangeEvent(this, 
 				GameModel.PLAYER_FOLDED, new Object(), this));
 	}
@@ -500,7 +500,7 @@ public class Player implements Cloneable, Serializable {
 	 * @param aCard card to add
 	 */
 	public void setHand(Hand aHand) {
-		myHand = aHand;
+		hand = aHand;
 	}
 	
 	/**
@@ -509,7 +509,7 @@ public class Player implements Cloneable, Serializable {
 	 * @return current hand
 	 */
 	public Hand getHand() {
-		return myHand;
+		return hand;
 	}
 	
 	/**
@@ -584,7 +584,7 @@ public class Player implements Cloneable, Serializable {
 	}
 
 	public String toString() {
-		return name + ": " + getStack() + "\t" + myHand.toString();
+		return name + ": " + getStack() + "\t" + hand.toString();
 	}
 
 	/**
@@ -606,8 +606,9 @@ public class Player implements Cloneable, Serializable {
 		active = b;
 	}
 	
-	public void setSittingOut(boolean b) {
-		sittingOut = b;
+	
+	public void sitOut() {
+		sittingOut = true;
 	}
 
 	/**

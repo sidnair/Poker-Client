@@ -1,11 +1,15 @@
 package pokerclient.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.naming.OperationNotSupportedException;
-
-public class Players implements Iterable<Player> {
+public class Players implements Iterable<Player>, Serializable {
+	
+	/**
+	 * Automatically generated serial ID. 
+	 */
+	private static final long serialVersionUID = 8437955403272755772L;
 	
 	private ArrayList<Player> players;
 
@@ -31,14 +35,14 @@ public class Players implements Iterable<Player> {
 	 * that wraps around the indeces.
 	 */
 	
-	public Iterator<Player> activeIterator(final int startIndex) {
+	public Iterator<Player> inHandIterator(final int startIndex) {
 		return new Iterator<Player>() {
 			
 			int i = startIndex;
 			
 			@Override
 			public boolean hasNext() {
-				return (i > startIndex) && (i % players.size() == startIndex);
+				return true;
 			}
 
 			@Override
@@ -47,12 +51,12 @@ public class Players implements Iterable<Player> {
 					i++;
 				}
 				i++;
-				return players.get(i % players.size());
+				return players.get((i - 1) % players.size());
 			}
 
 			@Override
 			public void remove() {
-				players.remove(i-1 % players.size());
+				players.remove((i - 1) % players.size());
 			}
 		};
 	}
@@ -60,6 +64,51 @@ public class Players implements Iterable<Player> {
 	@Override
 	public Iterator<Player> iterator() {
 		return players.iterator();
+	}
+	
+	public ArrayList<Player> getPlayersCopy() {
+		return (ArrayList<Player>) players.clone();
+	}
+	
+	public int size() {
+		return players.size();
+	}
+	
+	public boolean contains(Player p) {
+		return players.contains(p);
+	}
+	
+	public void remove(Player p) {
+		players.remove(p);
+	}
+	
+	public Player get(int i) {
+		return players.get(i % players.size());
+	}
+
+	public int inHandCount() {
+		int inHand = 0;
+		for (int i = 0; i < players.size(); i++) {
+			if (players.get(i).isInHand()) {
+				inHand++;
+			}
+		}
+		return inHand;
+	}
+
+	public ArrayList<Player> inHand(int start) {
+		ArrayList<Player> inHandPlayers = new ArrayList<Player>();
+		for (int i = start; i < players.size() + start; i++) {
+			Player p = players.get(i % players.size());
+			if (p.isInHand()) {
+				inHandPlayers.add(p);
+			}
+		}
+		return inHandPlayers;
+	}
+
+	public int indexOf(Player active) {
+		return players.indexOf(active);
 	}
 
 }

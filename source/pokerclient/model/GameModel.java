@@ -4,6 +4,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,31 +43,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private final static int PLAYER_JOINED = 5;
 
 	/**
-	 * Pause between dealing each card in all in situations.
-	 */
-	private final static int ALL_IN_PAUSE = 3000;
-	
-	/**
-	 * Pause at the end of the street before the next card is dealt. Should be
-	 * no bigger than ALL_IN_PAUSE.
-	 */
-	private final static int END_OF_STREET_PAUSE = 500;
-
-	/**
-	 * Pause at the end of showdown if there is more than one player in the
-	 * hand.
-	 */
-	private final static int SHOWDOWN_PAUSE_MULTIPLE = 3000;
-
-	/**
-	 * Pause at end of showdown if just one player is involved in the hand.
-	 */
-	private final static int SHOWDOWN_PAUSE_SINGLE = 1000;
-
-	/**
 	 * Index of button
 	 */
-	private int btnIndex;
+	private int buttonIndex;
 
 	/**
 	 * Count of remaining active players.
@@ -112,11 +92,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	public final static String CHAT_UPDATE = "Chat updated";
 
 	/**
-	 * Index of currently active player.
-	 */
-	private int activePlayerIndex;
-
-	/**
 	 * Lock used to use conditions for receiving actions and updating the GUI.
 	 */
 	private Lock lock;
@@ -127,22 +102,8 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private Condition actionReceived;
 
 	private Condition playersRemoved;
-
-	/**
-	 * List of stable players used to provide a constant order to the players
-	 * when passing information to the view.
-	 */
-	private ArrayList<Player> stablePlayers;
-
-	/**
-	 * All the players in the game.
-	 */
-	private ArrayList<Player> myPlayers;
-
-	/**
-	 * Players currently in the game.
-	 */
-	private ArrayList<Player> activePlayers;
+	
+	private Players allPlayers;
 
 	/**
 	 * Pots in the active hand.
@@ -163,16 +124,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * Community cards.
 	 */
 	private Board board;
-
-	/**
-	 * Index of sb pre-flop.
-	 */
-	private static final int SB_INDEX = 0;
-
-	/**
-	 * Index of bb pre-flop.
-	 */
-	private static final int BB_INDEX = 1;
 
 	public static final boolean TOP_OFF = true;
 
@@ -205,8 +156,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 
 	private GameSettings settings;
 	
-	private int startPlayerIndex;
-
 	/**
 	 * Constructs the game and instantiates players, deck, board, and pots.
 	 * 
@@ -218,8 +167,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		flop = this.new Street(3, "Flop", true);
 		turn = this.new Street(1, "Turn", false);
 		river = this.new Street(1, "River", false);
-		stablePlayers = new ArrayList<Player>();
-		myPlayers = new ArrayList<Player>();
+		allPlayers = new Players();
 		toRemove = new ArrayList<Player>();
 		toAdd = new ArrayList<Player>();
 		deck = new Deck();
@@ -233,9 +181,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		printer = new HHPrinter(Integer.toString(id));
 		printer.add("******NEW SESSION*****" + "\t" + new Date().toString()
 				+ "\n");
-		lock.lock();
-		oldState = new GameState(stablePlayers, pots, board);
-		lock.unlock();
+		oldState = new GameState(allPlayers.getPlayersCopy(), pots, board);
 	}
 
 	private void initLock() {
@@ -247,7 +193,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	public void run() {
 		while (true) {
 			updatePlayers();
-			while (stablePlayers.size() < 2) {
+			while (allPlayers.size() < 2) {
 				updatePlayers();
 			}
 			playHand();
@@ -262,15 +208,15 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	/**
 	 * Adds a new player to the game.
 	 * 
-	 * @param aPlayer player to add
+	 * @param newPlayer player to add
 	 */
-	public void addPlayer(Player aPlayer) {
-		if (!stablePlayers.contains(aPlayer)) {
+	public void addPlayer(Player newPlayer) {
+		if (!allPlayers.contains(newPlayer)) {
 			lock.lock();
-			toAdd.add(aPlayer);
+			toAdd.add(newPlayer);
 			lock.unlock();
 		} else {
-			System.err.println("Name " + aPlayer.getName() + " was already"
+			System.err.println("Name " + newPlayer.getName() + " was already"
 					+ "taken. Seating was denied");
 		}
 		updateGUI(PLAYER_JOINED);
@@ -282,16 +228,14 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private void addWaitingPlayers() {
 		lock.lock();
 		for (Player p : toAdd) {
-			if (stablePlayers.size() > MAX_PLAYERS) {
+			if (allPlayers.size() > MAX_PLAYERS) {
 				// TODO: notify player...
 				System.err.println("Table full. " + p.getName()
 						+ " was denied seating.");
 				lock.unlock();
 				return;
 			}
-			
-			stablePlayers.add(p);
-			myPlayers.add(p);
+			allPlayers.addPlayer(p);
 		}
 		lock.unlock();
 		toAdd.clear();
@@ -300,13 +244,11 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	/**
 	 * Indicates that a player is sitting out and removes them from the game.
 	 */
-	public void sitOutPlayer(Player aPlayer) {
-		for (Player p : activePlayers) {
-			if (p.equals(aPlayer)) {
-				p.setSittingOut(true);
-			}
-		}
-		toRemove.add(aPlayer);
+	public void sitOutPlayer(Player player) {
+		assert allPlayers.contains(player);
+		
+		player.sitOut();
+		toRemove.add(player);
 	}
 
 	/**
@@ -333,8 +275,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		lock.lock();
 		try {
 			for (Player p : toRemove) {
-				stablePlayers.remove(p);
-				myPlayers.remove(p);
+				allPlayers.remove(p);
 			}
 			toRemove.clear();
 			playersRemoved.signalAll();
@@ -349,26 +290,11 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	public void playHand() {
 		initHand();
 		runHand();
-		for (Player p : myPlayers) {
+		for (Player p : allPlayers) {
 			p.resetHand();
-			board.initBoard();
 		}
+		board.initBoard();
 		updateGUI(END_OF_HAND);
-		startPlayerIndex++;
-	}
-
-	private void updateButtonIndex() {
-		int goalIndex;
-		if (stablePlayers.size() == 2) {
-			goalIndex = 0;
-		} else {
-			goalIndex = stablePlayers.size() - 1;
-		}
-		for (int i = 0; i < stablePlayers.size(); i++) {
-			if (activePlayers.get(goalIndex) == stablePlayers.get(i)) {
-				btnIndex = i;
-			}
-		}
 	}
 
 	/**
@@ -377,17 +303,14 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private void initHand() {
 		handCount++;
-		activePlayers = (ArrayList<Player>) myPlayers.clone();
-		incrementPositions(myPlayers);
 		deck.init();
 		pots.clear();
 		pots.add(new Pot());
-		for (Player p : myPlayers) {
+		for (Player p : allPlayers) {
 			p.resetHand();
 		}
 		updateChat("Hand #" + handCount + "\n");
 		updateButton();
-
 	}
 
 	/**
@@ -400,8 +323,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 
 	public void updateButton() {
-		updateButtonIndex();
-		firePropertyChange(GameView.UPDATE_BTN, "", new Integer(btnIndex));
+		buttonIndex++;
+		firePropertyChange(GameView.UPDATE_BTN, "",
+				new Integer(buttonIndex % allPlayers.size()));
 	}
 	
 	private class Street implements Serializable {
@@ -429,14 +353,15 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			if (isEveryoneAllIn()) {
 				updateGUI(ALL_IN);
 				if (isHandContested()) {
-					pause(ALL_IN_PAUSE - END_OF_STREET_PAUSE);
+					pause(GameSettings.ALL_IN_PAUSE -
+							GameSettings.END_OF_STREET_PAUSE);
 				}
 			}
 			dealStreet(numCards);
 			updateGUI(START_OF_STREET);
 			updateChat(streetToString(name));
 			playStreet(0, false, isFlop);
-			pause(END_OF_STREET_PAUSE);
+			pause(GameSettings.END_OF_STREET_PAUSE);
 		}
 		
 	}
@@ -460,16 +385,28 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		updateChat(streetToString("Pre-flop"));
 		dealPreFlop();
 		playStreet(settings.getBigBlind(), true, false);
-		pause(END_OF_STREET_PAUSE);
+		pause(GameSettings.END_OF_STREET_PAUSE);
+	}
+	
+	private int getSBOffset() {
+		boolean hu = (allPlayers.inHandCount() == 2);
+		return hu ? 0 : 1;
+	}
+	
+	private int getBBOffset() {
+		boolean hu = (allPlayers.inHandCount() == 2);
+		return hu ? 1 : 2;
 	}
 
 	private void payBlinds() {
-		activePlayers.get(SB_INDEX).paySmallBlind(settings.getSmallBlind());
-		activePlayers.get(BB_INDEX).payBigBlind(settings.getBigBlind());
+		allPlayers.get(buttonIndex + getSBOffset())
+				.paySmallBlind(settings.getSmallBlind());
+		allPlayers.get(buttonIndex + getBBOffset())
+				.payBigBlind(settings.getBigBlind());
 	}
 
 	private void payAntes() {
-		for (Player p : myPlayers) {
+		for (Player p : allPlayers) {
 			p.payAnte(settings.getAnte());
 		}
 	}
@@ -486,7 +423,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private void dealPreFlop() {
 		deck.shuffle();
-		for (Player p : myPlayers) {
+		for (Player p : allPlayers.inHand(buttonIndex + 1)) {
 			Hand h = new Hand();
 			for (int i = 0; i < 2; i++) {
 				h.setCard(i, deck.nextCard());
@@ -505,7 +442,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * Showdown determines winner.
 	 */
 	public void showDown() {
-		if (activePlayers.size() > 1) {// TODO: this might cause bugs 6h
+		if (allPlayers.inHandCount() > 1) {
 			updateGUI(SHOWDOWN);
 			updateChat(streetToString("Showdown"));
 			for (Pot pot : pots) {
@@ -518,11 +455,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			pauseShowdown();
 		} else {
 			updateChat(streetToString("Showdown"));
-			// TODO - this can fail if everyone has quit. Don't simply guard to
-			// see if size is 1 since this sometimes is 0 when it shouldn't be,
-			// so that change would just mask the bug.
-			assert activePlayers.size() == 1;
-			ship(activePlayers.get(0), pots.get(0), 1.0);
+			// TODO - this can fail if everyone has quit.
+			assert allPlayers.inHandCount() == 1;
+			ship(allPlayers.inHandIterator(0).next(), pots.get(0), 1.0);
 		}
 		updateChat("\n-----\n");
 	}
@@ -539,40 +474,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 
 	/**
-	 * Increments the positions of the players.
-	 * 
-	 * @param anArray
-	 *            array of all the players.
-	 */
-	private void incrementPositions(ArrayList<Player> anArray) {
-		ArrayList<Player> temp = new ArrayList<Player>();
-		for (Player p : anArray) {
-			temp.add(p);
-		}
-		for (int i = 0; i < temp.size() - 1; i++) {
-			anArray.set(i, temp.get(i + 1));
-		}
-		anArray.set(temp.size() - 1, temp.get(0));
-	}
-
-	/**
-	 * Decrements the positions of the players
-	 * 
-	 * @param anArray
-	 *            array of all the players.
-	 */
-	private void decrementPositions(ArrayList<Player> anArray) {
-		ArrayList<Player> temp = new ArrayList<Player>();
-		for (Player p : anArray) {
-			temp.add(p);
-		}
-		for (int i = temp.size() - 1; i > 0; i--) {
-			anArray.set(i, temp.get(i - 1));
-		}
-		anArray.set(0, temp.get(temp.size() - 1));
-	}
-
-	/**
 	 * Plays a single street.
 	 * 
 	 * @param currentRaise inital raise players are facing - 0 on every street
@@ -580,62 +481,43 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * @param flop true when the street is the flop
 	 */
 	private void playStreet(int raiseSize, boolean preFlop, boolean flop) {
-		ArrayList<Player> tempPlayers = null;
+		if (allPlayers.inHandCount() < 2) {
+			return;
+		}
+		
 		oldRaise = 0;
 		currentRaise = raiseSize;
+		int activeStartIndex = buttonIndex + 1;
 		if (preFlop) {
-			tempPlayers = (ArrayList<Player>) activePlayers.clone();
-			incrementPositions(activePlayers);
-			incrementPositions(activePlayers);
+			activeStartIndex += getBBOffset();
 		}
-		if (flop && stablePlayers.size() == 2) {
-			decrementPositions(activePlayers);
+		
+		remainingActiveCount = allPlayers.inHandCount();
+		
+		Iterator<Player> iter = allPlayers.inHandIterator(activeStartIndex);
+		while (actionUnclosed() && remainingActiveCount > 1 && iter.hasNext()) {
+			mainLogic(iter.next());
 		}
-		if (activePlayers.size() != 1) { // skips if only one player is playing
-			remainingActiveCount = activePlayers.size();
-			boolean done = false;
-			while (!done) {
-				done = true;
-				for (int i = 0; i < activePlayers.size(); i++) {
-					if (remainingActiveCount > 1) {
-						done = mainLogic(done, i);
-					}
-				}
-			}
-			cleanupLogic(preFlop, tempPlayers);
-		}
-	}
-
-	private void cleanupLogic(boolean preFlop, ArrayList<Player> tempPlayers) {
-		if (preFlop) {
-			activePlayers.clear();
-			for (Player p : tempPlayers) {
-				if (p.isInHand()) {
-					activePlayers.add(p);
-				}
-			}
-		} else {
-			ArrayList<Player> temp = new ArrayList<Player>();
-			for (Player p : activePlayers) {
-				if (p.isInHand()) {
-					temp.add(p);
-				}
-			}
-			activePlayers = temp;
-		}
-		for (Player p : activePlayers) {
+		for (Player p : allPlayers) {
 			p.resetStreet();
 		}
 	}
 
-	private boolean mainLogic(boolean done, int i) {
-		activePlayerIndex = i;
-		Player p = activePlayers.get(activePlayerIndex);
+	private boolean actionUnclosed() {
+		for (Player p : allPlayers.inHand(0)) {
+			if (!p.isActionClosed()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void mainLogic(Player p) {
 		// call a shove HU
 		boolean allCalled = true;
 		int allIns = 0;
-		for (Player pl : activePlayers) {
-			if (p != pl) {
+		for (Player pl : allPlayers.inHand(0)) {
+			if (!p.equals(pl)) {
 				if (pl.isAllIn()) {
 					allIns++;
 				}
@@ -644,47 +526,30 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 				}
 			}
 		}
-		done = mainLogicBody(done, i, p, allCalled, allIns);
-		return done;
+		mainLogicBody(p, allCalled, allIns);
 	}
 
-	private boolean mainLogicBody(boolean done, int i, Player p,
-			boolean allCalled, int allIns) {
-		if (p.isInHand()
+	private void mainLogicBody(Player p, boolean allCalled, int allIns) {
+		if (playerCanAct(p, allIns)) {
+			playerAct(p, allCalled);
+		}
+		pots = Pot.generatePots(
+				new HashSet<Player>(allPlayers.getPlayersCopy()));
+	}
+
+	private boolean playerCanAct(Player p, int allIns) {
+		return p.isInHand()
 				&& p.hasChips()
 				&& ((remainingActiveCount - allIns > 1) || (remainingActiveCount
 						- allIns >= 1 && (currentRaise
-						- p.getPutInPotOnStreet() > 0)))) {
-			done = playerAct(done, i, p, allCalled);
-		} else {
-			handlePotSize(p);
-		}
-		return done;
+						- p.getPutInPotOnStreet() > 0)));
 	}
 
-	private void handlePotSize(Player p) {
-		Player largestRaiserYet = null;
-		for (Player player : activePlayers) {
-			if (largestRaiserYet == null) {
-				largestRaiserYet = player;
-			} else if (player.getPutInPotOnStreet() > largestRaiserYet
-					.getPutInPotOnStreet()) {
-				largestRaiserYet = player;
-			}
-		}
-		if (p.isAllIn() && !(p.equals(largestRaiserYet))) {
-			pots = Pot.generatePots(pots
-					.get(MAIN_POT_INDEX).getPlayers());
-			// pots.addAll(pots.get(MAIN_POT_INDEX).calcSidePots(p.getLastSize()));
-			// pots = getUniquePots(pots);
-		}
-	}
-
-	private boolean playerAct(boolean done, int i, Player p, boolean allCalled) {
-		if ((!allCalled) || (!p.hasActed())) {
+	private void playerAct(Player p, boolean allCalled) {
+		if (!allCalled || !p.hasActed()) {
 			p.setActive(true);
 			p.updateSizing(currentRaise, oldRaise);
-			updateGUI(START_OF_TURN, i);
+			updateGUI(START_OF_TURN, p);
 			p.act();
 
 			lock.lock();
@@ -699,19 +564,16 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 				lock.unlock();
 			}
 			p.setActive(false);
-			if (!p.isActionClosed()) {
-				done = false;
-			}
 		} else {
 			p.setIsClosed(true);
 		}
-		return done;
 	}
 
 	private void pauseShowdown() {
 		try {
-			Thread.sleep(activePlayers.size() > 1 ?
-					SHOWDOWN_PAUSE_MULTIPLE : SHOWDOWN_PAUSE_SINGLE);
+			Thread.sleep(allPlayers.inHandCount() > 1 ?
+					GameSettings.SHOWDOWN_PAUSE_MULTIPLE :
+					GameSettings.SHOWDOWN_PAUSE_SINGLE);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -732,7 +594,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private boolean isEveryoneAllIn() {
 		int active = 0;
-		for (Player p : activePlayers) {
+		for (Player p : allPlayers.inHand(0)) {
 			if (!p.isAllIn()) {
 				active++;
 			}
@@ -745,7 +607,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	
 	private boolean isHandContested() {
 		int inHand = 0;
-		for (Player p : activePlayers) {
+		for (Player p : allPlayers.inHand(0)) {
 			if (p.isInHand()) {
 				inHand++;
 			}
@@ -759,29 +621,15 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	/**
 	 * Prints hh for a single street.
 	 * 
-	 * @param aStreet
-	 *            street to print
+	 * @param aStreet street to print
 	 * @return String for HHPrinter
 	 */
 	public String streetToString(String aStreet) {
 		String toReturn = "";
 		if (aStreet.equals("Pre-flop")) {
 			int seat = 1;
-			for (Player p : activePlayers) {
-				updateChat("Seat " + seat);
-				if (seat == 1) {
-					updateChat(" (SB)");
-				} else if (seat == 2) {
-					updateChat(" (BB)");
-				}
-				if (activePlayers.size() == 2) {
-					if (seat == 1) {
-						updateChat("/BTN");
-					}
-				} else if (seat == 3) {
-					updateChat(" (BTN)");
-				}
-				updateChat(": " + p.getName() + "\n");
+			for (Player p : allPlayers.inHand(buttonIndex + getSBOffset())) {
+				chatSeatString(seat, p);
 				seat++;
 			}
 		}
@@ -790,10 +638,10 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		if (board.getCardCount() > 0) {
 			toReturn += board.toString() + "\n";
 		}
-		toReturn += "(" + activePlayers.size() + " Players)" + "\n";
+		toReturn += "(" + allPlayers.inHandCount() + " Players)" + "\n";
 		if (aStreet.equals("Showdown")) {
-			if (activePlayers.size() > 1 || isEveryoneAllIn()) {
-				for (Player p : activePlayers) {
+			if (allPlayers.inHandCount() > 1 || isEveryoneAllIn()) {
+				for (Player p : allPlayers.inHand(buttonIndex)) {
 					toReturn += p.getName() + " shows "
 							+ p.getHand().toString() + " for "
 							+ HandRanker.getHandName(p.getHand(), board) + "\n";
@@ -801,6 +649,23 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			}
 		}
 		return toReturn;
+	}
+
+	private void chatSeatString(int seat, Player p) {
+		updateChat("Seat " + seat);
+		if (seat == 1) {
+			updateChat(" (SB)");
+		} else if (seat == 2) {
+			updateChat(" (BB)");
+		}
+		if (allPlayers.inHandCount() == 2) {
+			if (seat == 1) {
+				updateChat("/BTN");
+			}
+		} else if (seat == 3) {
+			updateChat(" (BTN)");
+		}
+		updateChat(": " + p.getName() + "\n");
 	}
 
 	/**
@@ -818,11 +683,11 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * Returns information about each player's hand
 	 */
 	public String toString() {
-		String toReturn = "POT: " + pots.get(MAIN_POT_INDEX).getSize() + "\n";
-		for (Player p : myPlayers) {
-			toReturn += p.toString() + "\n";
+		String s = "POT: " + pots.get(MAIN_POT_INDEX).getSize() + "\n";
+		for (Player p : allPlayers) {
+			s += p.toString() + "\n";
 		}
-		return toReturn;
+		return s;
 	}
 
 	/**
@@ -831,21 +696,13 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * @return
 	 */
 	public int getNumberTotalPlayers() {
-		return myPlayers.size();
+		return allPlayers.size();
 	}
 
-	private void updateGUI(int updateType, int index) {
-		Player active = activePlayers.get(index);
+	private void updateGUI(int updateType, Player active) {
 		if (updateType == GameModel.START_OF_TURN) {
-			int stableIndex = stablePlayers.size();
-			for (int i = 0; i < stablePlayers.size(); i++) {
-				if (stablePlayers.get(i).isActive()) {
-					stableIndex = i;
-					break;
-				}
-			}
-			currentState = new GameState(stablePlayers, active, pots, board,
-					stableIndex);
+			currentState = new GameState(allPlayers.getPlayersCopy(), active,
+					pots, board, allPlayers.indexOf(active));
 			firePropertyChange(GameView.GENERATE_GUI_START_OF_TURN, oldState,
 					currentState);
 		} else {
@@ -858,20 +715,8 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		}
 	}
 
-	/**
-	 * Updates the GUI when necessary.
-	 * 
-	 * @param endOfHand
-	 *            true if this is the end of the hand.
-	 * @param players
-	 *            true
-	 * @param index
-	 */
 	private void updateGUI(int updateType) {
-		// Lock since stablePlayers is being iterated through in GameState.
-		lock.lock();
-		currentState = new GameState(stablePlayers, pots, board);
-		lock.unlock();
+		currentState = new GameState(allPlayers.getPlayersCopy(), pots, board);
 		if (updateType == GameModel.ALL_IN) {
 			firePropertyChange(GameView.GENERATE_GUI_ALL_IN, oldState,
 					currentState);
@@ -931,25 +776,29 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		} else if (evt.getPropertyName().equals(CHAT_UPDATE)) {
 			updateChat((String) evt.getNewValue());
 		} else if (evt.getPropertyName().equals(GameView.PLAYER_ACTION)) {
-			for (Player p : activePlayers) {
+			for (Player p : allPlayers.inHand(0)) {
 				Action action = (Action) evt.getNewValue();
 				if (p.getName().equals(action.getPlayerName())) {
-					if (action.getAction().equals(Action.ActionType.RAISE)) {
-						p.raise(action.getSize());
-					} else if (action.getAction().equals(Action.ActionType.BET)) {
-						p.bet(action.getSize());
-					} else if (action.getAction()
-							.equals(Action.ActionType.FOLD)) {
-						p.fold();
-					} else if (action.getAction()
-							.equals(Action.ActionType.CALL)) {
-						p.call();
-					} else if (action.getAction().equals(
-							Action.ActionType.CHECK)) {
-						p.check();
-					}
+					takeAction(p, action);
 				}
 			}
+		}
+	}
+
+	private void takeAction(Player p, Action action) {
+		if (action.getAction().equals(Action.ActionType.RAISE)) {
+			p.raise(action.getSize());
+		} else if (action.getAction().equals(Action.ActionType.BET)) {
+			p.bet(action.getSize());
+		} else if (action.getAction()
+				.equals(Action.ActionType.FOLD)) {
+			p.fold();
+		} else if (action.getAction()
+				.equals(Action.ActionType.CALL)) {
+			p.call();
+		} else if (action.getAction().equals(
+				Action.ActionType.CHECK)) {
+			p.check();
 		}
 	}
 
