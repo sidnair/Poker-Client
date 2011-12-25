@@ -8,6 +8,7 @@ import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 
+import pokerclient.model.GameSettings;
 import pokerclient.model.Player;
 import pokerclient.model.Pot;
 
@@ -16,6 +17,9 @@ public class PotTest {
 	private static final int NUM_PLAYERS = 3;
 	private static final int DEFAULT_STACK = 2000;
 	private static final int DEFAULT_BB = 10;
+	private static final GameSettings settings =
+			new GameSettings(DEFAULT_STACK, DEFAULT_BB, DEFAULT_BB / 2, 0, 50,
+					true);
 	
 	private ArrayList<Player> players;
 	
@@ -25,7 +29,7 @@ public class PotTest {
 	public void setUp() {
 		players = new ArrayList<Player>();
 		for (int i = 0; i < NUM_PLAYERS; i++) {
-			Player p = new Player(names[i], null, DEFAULT_STACK, DEFAULT_BB, null);
+			Player p = new Player(names[i], "path", settings, null);
 			players.add(p);
 		}
 	}

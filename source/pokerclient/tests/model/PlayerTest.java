@@ -8,6 +8,7 @@ import java.beans.PropertyChangeListener;
 import org.junit.Before;
 import org.junit.Test;
 
+import pokerclient.model.GameSettings;
 import pokerclient.model.Player;
 
 public class PlayerTest {
@@ -21,11 +22,15 @@ public class PlayerTest {
 	private final static int START_STACK = 2000;
 	private final static int BIG_BLIND = 10;
 	
+	private static final GameSettings settings =
+			new GameSettings(START_STACK, BIG_BLIND, BIG_BLIND / 2, 0, 50,
+					true);
+	
 	private Player p;
 	
 	@Before
 	public void SetUp() {
-		p = new Player(NAME, PATH, START_STACK, BIG_BLIND, new DummyListener());
+		p = new Player(NAME, PATH, settings, new DummyListener());
 	}
 	
 	@Test

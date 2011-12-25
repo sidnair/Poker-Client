@@ -9,8 +9,8 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
@@ -26,8 +26,8 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import pokerclient.model.GameModel;
+import pokerclient.model.GameSettings;
 import pokerclient.model.Player;
-
 
 public class GameServer implements PropertyChangeListener, Runnable {
 	
@@ -60,8 +60,9 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	}
 	
 	private void initModel(int port) {
-		model = new GameModel(DEFAULT_BB, DEFAULT_SB, DEFAULT_ANTE,
-				DEFAULT_STACK, port);
+		GameSettings settings = new GameSettings(DEFAULT_STACK, DEFAULT_BB,
+				DEFAULT_SB, DEFAULT_ANTE, DEFAULT_STACK, true);
+		model = new GameModel(settings, port);
 		model.setPropertyChangeListener(this);
 		try {
 			server = new ServerSocket(port);
@@ -190,7 +191,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
         
         String name = (String) (in.readObject());
         String path = (String) (in.readObject());
-        Player player = new Player(name, path, DEFAULT_STACK, DEFAULT_BB, model);
+        Player player = new Player(name, path, model.getSettings(), model);
         
         System.out.println(name + " \t" + path);
         

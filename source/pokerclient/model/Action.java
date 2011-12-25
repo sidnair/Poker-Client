@@ -69,8 +69,8 @@ public class Action implements Serializable {
 	}
 	
 	private boolean hasRaiseSize() {
-		return !actionType.equals(ActionType.RAISE) &&
-				!actionType.equals(ActionType.BET);
+		return actionType.equals(ActionType.RAISE) ||
+				actionType.equals(ActionType.BET);
 	}
 	
 	/**

@@ -165,21 +165,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private Board board;
 
 	/**
-	 * Default big blind.
-	 */
-	private int bigBlind;
-
-	/**
-	 * Default small blind.
-	 */
-	private int smallBlind;
-
-	/**
-	 * Default ante.
-	 */
-	private int ante;
-
-	/**
 	 * Index of sb pre-flop.
 	 */
 	private static final int SB_INDEX = 0;
@@ -218,20 +203,18 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private final Street turn;
 	private final Street river;
 
+	private GameSettings settings;
+	
+	private int startPlayerIndex;
+
 	/**
 	 * Constructs the game and instantiates players, deck, board, and pots.
 	 * 
-	 * @param bigBlind initial bb
-	 * @param smallBlind initial sb
-	 * @param ante initial ante
-	 * @param initialStackSize initial stacks
+	 * @param settings configuration params for the game
 	 * @param decisionTime decision time
 	 */
-	public GameModel(int bigBlind, int smallBlind, int ante,
-			int initialStackSize, int id) {
-		this.bigBlind = bigBlind;
-		this.smallBlind = smallBlind;
-		this.ante = ante;
+	public GameModel(GameSettings settings, int id) {
+		this.settings = settings;
 		flop = this.new Street(3, "Flop", true);
 		turn = this.new Street(1, "Turn", false);
 		river = this.new Street(1, "River", false);
@@ -371,6 +354,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			board.initBoard();
 		}
 		updateGUI(END_OF_HAND);
+		startPlayerIndex++;
 	}
 
 	private void updateButtonIndex() {
@@ -469,23 +453,24 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		river.run();
 		showDown();
 		exportHand();
+		settings.tick();
 	}
 
 	private void runPreflop() {
 		updateChat(streetToString("Pre-flop"));
 		dealPreFlop();
-		playStreet(bigBlind, true, false);
+		playStreet(settings.getBigBlind(), true, false);
 		pause(END_OF_STREET_PAUSE);
 	}
 
 	private void payBlinds() {
-		activePlayers.get(SB_INDEX).paySmallBlind(smallBlind);
-		activePlayers.get(BB_INDEX).payBigBlind(bigBlind);
+		activePlayers.get(SB_INDEX).paySmallBlind(settings.getSmallBlind());
+		activePlayers.get(BB_INDEX).payBigBlind(settings.getBigBlind());
 	}
 
 	private void payAntes() {
 		for (Player p : myPlayers) {
-			p.payAnte(ante);
+			p.payAnte(settings.getAnte());
 		}
 	}
 
@@ -984,6 +969,10 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		} finally {
 			lock.unlock();
 		}
+	}
+	
+	public GameSettings getSettings() {
+		return settings;
 	}
 
 }

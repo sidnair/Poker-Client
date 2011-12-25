@@ -106,9 +106,7 @@ public class Player implements Cloneable, Serializable {
 	 */
 	private String avatarPath;
 
-	private int defaultBigBlind;
-
-	private int startingStack;
+	private GameSettings settings;
 	
 	/**
 	 * Constructor for the player that initializes a new hand, restacks the 
@@ -116,31 +114,26 @@ public class Player implements Cloneable, Serializable {
 	 * 
 	 * @param name name to be associated with the player
 	 */
-	public Player(String name, String avatarPath, int startingStack, 
-			int defaultBigBlind, PropertyChangeListener listener) {
+	public Player(String name, String avatarPath,  GameSettings settings,
+			PropertyChangeListener listener) {
 		this.name = name;
 		this.avatarPath = avatarPath;
 		this.listener = listener;
-		this.startingStack = startingStack;
-		this.stack = startingStack;
-		setBigBlind(defaultBigBlind);
+		this.settings = settings;
+		this.stack = settings.getStartingStack();
 		lock = new ReentrantLock();
 		actionTaken = lock.newCondition();
 		resetHand();
-	}
-
-	private void setBigBlind(int defaultBigBlind) {
-		this.defaultBigBlind = defaultBigBlind;
-		minRaise = defaultBigBlind * 2;
 	}
 	
 	/**
 	 * Resets the hand - deals a new hand and tops off the stack.
 	 */
 	public void resetHand() {
+		currentRaise = settings.getBigBlind();
+		minRaise = settings.getBigBlind() * 2;
 		myHand = new Hand();
 		totalPutInPot = 0;
-		currentRaise = defaultBigBlind;
 		isBigBlind = false;
 		isSmallBlind = false;
 		topOff();
@@ -166,8 +159,8 @@ public class Player implements Cloneable, Serializable {
 			return;
 		}
 		
-		if (stack < startingStack) {
-			addToStack(startingStack - stack);
+		if (stack < settings.getStartingStack()) {
+			addToStack(settings.getStartingStack() - stack);
 		}
 	}
 	
@@ -222,12 +215,11 @@ public class Player implements Cloneable, Serializable {
 		return cost;
 	}
 	
-	// TODO - does this need to be in the playe class?
 	public void updateSizing(int raiseSize, int oldRaiseSize) {
 		// If the player faces a raise or this is the first time the player
 		// acts.
 		if (currentRaise != raiseSize || !acted) {
-			minRaise = Math.max(2 * raiseSize - oldRaiseSize, defaultBigBlind);
+			minRaise = Math.max(2 * raiseSize - oldRaiseSize, settings.getBigBlind());
 			currentRaise = raiseSize;
 			toCall = raiseSize - putInPotOnStreet;
 			canAct = true;
@@ -340,7 +332,7 @@ public class Player implements Cloneable, Serializable {
 		int willCall = Math.min(stack, toCall);
 		pay(willCall);
 		printAction("calls", willCall);
-		// TODO - curentRaise?
+		// TODO - why passing curentRaise?
 		listener.propertyChange(new PropertyChangeEvent(this, 
 				GameModel.PLAYER_CALLED, new Object(), currentRaise));
 		takeAction(true, true);
