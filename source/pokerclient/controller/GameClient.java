@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import pokerclient.gui.GameView;
+import pokerclient.model.GameSettings;
 
 public class GameClient implements PropertyChangeListener, Runnable {
 	
@@ -16,20 +17,28 @@ public class GameClient implements PropertyChangeListener, Runnable {
 	
 	private static final String PASS = "supersecret";
 	
-	// TODO - the server should be setting this
-	private static final int TIME_BANK = 500000;
 	private static final String USAGE =
 			"Usage: java GameClient host port playerName pathToAvatar";	
 	private Socket socket;
 	private GameView view;
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
-	
+
 	public GameClient(String host, int port, String name, String path) {
+		this(host, port, name, path,
+				new GameSettings(GameServer.DEFAULT_STACK, GameServer.DEFAULT_BB,
+						GameServer.DEFAULT_SB, GameServer.DEFAULT_ANTE,
+						GameServer.DEFAULT_TIME_BANK,
+						GameServer.DEFAULT_MAX_PLAYERS,
+						GameServer.DEFAULT_TOP_OFF));
+	}
+	
+	public GameClient(String host, int port, String name, String path, 
+			GameSettings settings) {
 		// TODO - make sure that the view gets updated if the server says that
 		// the BB or time bank is different.
-		view = new GameView(this, name, TIME_BANK, GameServer.DEFAULT_BB,
-				host.contains(PASS));
+		view = new GameView(this, name, settings.getTimebank(),
+				settings.getBigBlind(), host.contains(PASS));
 		if (host.contains(PASS)) {
 			host = host.replace(PASS, "");
 		}
@@ -55,12 +64,10 @@ public class GameClient implements PropertyChangeListener, Runnable {
 	private void initializeOutStream(String name, String path) {
 		try {
 			out = new ObjectOutputStream(socket.getOutputStream());
-			out.writeObject(name);
-			out.flush();
 			if (path.equals(NULL_PATH)) {
 				path = DEFAULT_PATH;
 			}
-			out.writeObject(path);
+			out.writeObject(new JoinSettings(name, path));
 			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();

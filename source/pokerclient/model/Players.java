@@ -2,7 +2,9 @@ package pokerclient.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 public class Players implements Iterable<Player>, Serializable {
 	
@@ -11,12 +13,12 @@ public class Players implements Iterable<Player>, Serializable {
 	 */
 	private static final long serialVersionUID = 8437955403272755772L;
 	
-	private ArrayList<Player> players;
+	private List<Player> players;
 	
 	private int buttonIndex;
-
+	
 	public Players() {
-		players = new ArrayList<Player>();
+		players = Collections.synchronizedList(new ArrayList<Player>());
 	}
 	
 	/**
@@ -68,9 +70,12 @@ public class Players implements Iterable<Player>, Serializable {
 		return players.iterator();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public ArrayList<Player> getPlayersCopy() {
-		return (ArrayList<Player>) players.clone();
+		ArrayList<Player> newList = new ArrayList<Player>();
+		for (Player p : players) {
+			newList.add(p);
+		}
+		return newList;
 	}
 	
 	public int size() {

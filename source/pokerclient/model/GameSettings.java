@@ -38,17 +38,19 @@ public class GameSettings implements Serializable {
 	private int ante;
 	private int startingStack;
 	private boolean topOff;
+	private int maxPlayers;
 	
 	// TODO - store meta info like game type.
 	
 	public GameSettings(int initialStackSize, int bigBlind, int smallBlind,
-			int ante, int timebank, boolean topOff) {
+			int ante, int timebank, int maxPlayers, boolean topOff) {
 		this.startingStack = initialStackSize;
 		this.bigBlind = bigBlind;
 		this.smallBlind = smallBlind;
 		this.ante = ante;
 		this.timebank = timebank;
 		this.topOff = topOff;
+		this.maxPlayers = maxPlayers;
 	}
 	
 	// Called at end of hand.
@@ -78,6 +80,10 @@ public class GameSettings implements Serializable {
 
 	public boolean isTopOff() {
 		return topOff;
+	}
+	
+	public int getMaxPlayers() {
+		return maxPlayers;
 	}
 
 }

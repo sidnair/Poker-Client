@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.io.Serializable;
 
@@ -78,7 +77,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	/**
 	 * Lock used to use conditions for receiving actions and updating the GUI.
 	 */
-	private Lock lock;
+	private ReentrantLock lock;
 
 	/**
 	 * Used to ensure a player action has been processed before proceeding.
@@ -128,8 +127,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private ArrayList<Player> toRemove;
 
 	private ArrayList<Player> toAdd;
-
-	private int MAX_PLAYERS = 6;
 
 	private GameState currentState;
 	
@@ -210,7 +207,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private void addWaitingPlayers() {
 		lock.lock();
 		for (Player p : toAdd) {
-			if (allPlayers.size() > MAX_PLAYERS) {
+			if (allPlayers.size() > settings.getMaxPlayers()) {
 				// TODO: notify player...
 				System.err.println("Table full. " + p.getName()
 						+ " was denied seating.");
@@ -230,7 +227,10 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		assert allPlayers.contains(player);
 		
 		player.sitOut();
-		toRemove.add(player);
+		
+		allPlayers.remove(player);
+		
+//		toRemove.add(player);
 	}
 
 	/**

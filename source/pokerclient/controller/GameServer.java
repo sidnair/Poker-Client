@@ -9,12 +9,9 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
@@ -40,6 +37,9 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	public static final int DEFAULT_STACK = 2000;
 	public static final int DEFAULT_FRAME_WIDTH = 400;
 	public static final int DEFAULT_FRAME_HEIGHT = 400;
+	public static final int DEFAULT_TIME_BANK = 500 * 1000;
+	public static final boolean DEFAULT_TOP_OFF = true;
+	public static final int DEFAULT_MAX_PLAYERS = 6;
     
 	private ServerSocket server;
 	private ArrayList<GameClientWorker> workers;
@@ -61,7 +61,8 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	
 	private void initModel(int port) {
 		GameSettings settings = new GameSettings(DEFAULT_STACK, DEFAULT_BB,
-				DEFAULT_SB, DEFAULT_ANTE, DEFAULT_STACK, true);
+				DEFAULT_SB, DEFAULT_ANTE, DEFAULT_TIME_BANK,
+				DEFAULT_MAX_PLAYERS, DEFAULT_TOP_OFF);
 		model = new GameModel(settings, port);
 		model.setPropertyChangeListener(this);
 		try {
@@ -101,8 +102,6 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	 * @param chatScrollPane the pane for which scrolling should be limited.
 	 */
 	private void controlScrolling(JScrollPane chatScrollPane) {
-		// TODO - make sure that replacing this logic with the simpler logic
-		// below doesn't introduce a bug.
 		messageDisplay.addMouseListener(new 
 				MouseAdapter() {
 			public void mouseEntered(MouseEvent evt) {
@@ -121,23 +120,23 @@ public class GameServer implements PropertyChangeListener, Runnable {
 				shouldScroll = true;
 			}
 		});
-			chatScrollPane.getVerticalScrollBar().addAdjustmentListener(
-				new AdjustmentListener() {  
-					public void adjustmentValueChanged(AdjustmentEvent e) {
-						if (shouldScroll) {
-							e.getAdjustable().setValue(e.getAdjustable().getMaximum());
+		chatScrollPane.getVerticalScrollBar().addAdjustmentListener(
+			new AdjustmentListener() {
+				public void adjustmentValueChanged(AdjustmentEvent e) {
+					if (shouldScroll) {
+						e.getAdjustable().setValue(e.getAdjustable().getMaximum());
 					}
 				}
 		});
 	}
 	
-	private void updateTextArea(final String text) {  
-	  SwingUtilities.invokeLater(new Runnable() {  
-	    public void run() {  
-	      messageDisplay.append(text);  
-	    }  
-	  });  
-	}  
+	private void updateTextArea(final String text) {
+	  SwingUtilities.invokeLater(new Runnable() {
+	    public void run() {
+	      messageDisplay.append(text);
+	    }
+	  });
+	}
 		  
 	private void redirectSystemStreams() {  
 	  OutputStream out = new OutputStream() {  
@@ -162,45 +161,21 @@ public class GameServer implements PropertyChangeListener, Runnable {
 	}  
 
 	public void run(){
-		  new Thread(model).start();
-		  while (true) {
-		    try {
-		      Socket s = server.accept();
-              System.out.print("***NEW CONNECTION***" + "\t" +
-            		  s.getInetAddress().getHostName());
-              try {
-				acceptPlayer(s);
-			  } catch (ClassNotFoundException e) {
+		new Thread(model).start();
+		while (true) {
+			try {
+				System.out.println("server accepting");
+				GameClientWorker w = new GameClientWorker(server.accept(), model, workersLock, workers, this);
+				Thread t = new Thread(w);
+				t.start();
+			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);
-			  } catch (IOException e) {
-			    e.printStackTrace();
-			    System.exit(1);
-			  }
-		    } catch (IOException e) {
-              e.printStackTrace();
-		      System.err.println("Accept failed: " + "...");
-		      System.exit(1);
-		    }
-		  }
-	}
-	
-	private void acceptPlayer(Socket s) throws IOException, ClassNotFoundException {
-		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-        ObjectInputStream in = new ObjectInputStream(s.getInputStream());
-        
-        String name = (String) (in.readObject());
-        String path = (String) (in.readObject());
-        Player player = new Player(name, path, model.getSettings(), model);
-        
-        System.out.println(name + " \t" + path);
-        
-        GameClientWorker w = new GameClientWorker(in, out, player, this);
-        workersLock.lock();
-        workers.add(w);
-        workersLock.unlock();
-        new Thread(w).start();
-        model.addPlayer(player);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
 	}
 
   	protected void finalize(){
@@ -219,6 +194,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
   				!s.equals(GameServer.REMOVE_ABSENT_PLAYERS);
   	}
 
+	// Lock should be held before calling this
 	@Override
 	public void propertyChange(PropertyChangeEvent evt) {
 		workersLock.lock();
@@ -234,6 +210,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 		workersLock.unlock();
 	}
 
+	// Lock should be held before calling this
 	private void removePlayer(PropertyChangeEvent evt) {
 		for (int i = 0; i < workers.size(); i++) {
 			GameClientWorker gcw = workers.get(i);
@@ -249,6 +226,7 @@ public class GameServer implements PropertyChangeListener, Runnable {
 		throw new AssertionError("No player removed");
 	}
 
+	// Lock should be held before calling this
 	private void removeAbsentPlayers(PropertyChangeEvent evt) {
 		@SuppressWarnings("unchecked")
 		ArrayList<Player> absentPlayers = (ArrayList<Player>) evt.getNewValue();

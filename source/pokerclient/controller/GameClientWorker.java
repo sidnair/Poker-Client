@@ -5,8 +5,12 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import pokerclient.model.Action;
+import pokerclient.model.GameModel;
 import pokerclient.model.Player;
 
 // TODO - refactor; unclear if the playing variable is needed since it doesn't
@@ -19,13 +23,24 @@ public class GameClientWorker implements Runnable {
 	private PropertyChangeListener listener;
 	private boolean playing;
 	  
-	  GameClientWorker(ObjectInputStream in, ObjectOutputStream out, 
-			  Player player, PropertyChangeListener listener) {
-		this.in = in;
-        this.out = out;
-		this.player = player;
-        this.listener = listener;
-        playing = true;
+	  GameClientWorker(Socket socket, GameModel model,
+			  ReentrantLock workersLock, ArrayList<GameClientWorker> workers,
+			  PropertyChangeListener listener) throws IOException, ClassNotFoundException {
+		  System.out.println("GCW start");
+		  this.out = new ObjectOutputStream(socket.getOutputStream());
+		  this.in = new ObjectInputStream(socket.getInputStream());
+		  JoinSettings settings = (JoinSettings) in.readObject();
+	      this.player = new Player(settings.getName(), settings.getAvatarPath(),
+	    		  model.getSettings(), model);
+	      System.out.println("New player: " + settings.getName() + " \t" + settings.getAvatarPath());
+
+	      this.listener = listener;
+		  playing = true;
+
+          model.addPlayer(player);
+          workersLock.lock();
+	      workers.add(this);
+	      workersLock.unlock();
 	  }
 	  
 	  public void run(){
@@ -39,12 +54,11 @@ public class GameClientWorker implements Runnable {
 		   } catch (ClassNotFoundException e) {
 			   e.printStackTrace();
 		   } catch (IOException e) {
-			   e.printStackTrace();
+			   System.out.println("Player " + player.getName() + " exited.");
+			   player.fold();
+	    	   playing = false;
 			   listener.propertyChange(new PropertyChangeEvent(this, 
 					   GameServer.PLAYER_QUIT, null, player));
-			   player.fold();
-	    	   System.out.println(player.getName() + " quit.");
-	    	   playing = false;
 	       }
 		 }
 	  }
