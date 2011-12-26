@@ -14,9 +14,6 @@ import javax.swing.Timer;
  * the player acts that sets the time to its fullest. Since the timer must
  * tick frequently to update the progress bar in a dynamic manner, it stores the
  * total amount of time the player has in terms of a number of ticks.
- *  
- * @author Sid Nair
- *
  */
 public class BankTimer extends Timer implements Cloneable {
 	
@@ -118,13 +115,13 @@ public class BankTimer extends Timer implements Cloneable {
 					if (tickCount == alertTickCount && isActive) {
 						pcl.propertyChange(new PropertyChangeEvent(
 								this, GameView.TIMER_NOTIFICATION,
-								new Object(), new Object()));
+								null, null));
 					}
 					if (tickCount == maxTicks) {
 						System.out.println("sending fold click info");
 						pcl.propertyChange(new PropertyChangeEvent(
 								this, GameView.TIMER_EXPIRED,
-								new Object(), new Object()));
+								null, null));
 					}
 				}
 			});

@@ -31,8 +31,8 @@ public class FoldButton extends AbstractActionButton {
 	@Override
 	public void runAction() {
 		super.getListener().propertyChange(new PropertyChangeEvent(this,
-				GameView.PLAYER_ACTION, new Object(), new Action(
-						super.getPlayerName(), Action.ActionType.FOLD)));
+				GameView.PLAYER_ACTION, null,
+				new Action(super.getPlayerName(), Action.ActionType.FOLD)));
 	}
 	
 }

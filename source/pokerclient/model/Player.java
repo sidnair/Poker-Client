@@ -211,7 +211,7 @@ public class Player implements Cloneable, Serializable {
 		putInPotOnStreet += cost;
 		totalPutInPot += cost;
 		listener.propertyChange(new PropertyChangeEvent(this,
-				GameModel.MONEY_PAID, new Object(), new Integer(cost)));
+				GameModel.MONEY_PAID, null, new Integer(cost)));
 		return cost;
 	}
 	
@@ -293,7 +293,7 @@ public class Player implements Cloneable, Serializable {
 		pay(currentRaise - putInPotOnStreet);
 		listener.propertyChange(new PropertyChangeEvent(this, 
 				betting ? GameModel.PLAYER_BET : GameModel.PLAYER_RAISED,
-				new Object(), currentRaise));
+				null, currentRaise));
 	}
 
 	/**
@@ -334,7 +334,7 @@ public class Player implements Cloneable, Serializable {
 		printAction("calls", willCall);
 		// TODO - why passing curentRaise?
 		listener.propertyChange(new PropertyChangeEvent(this, 
-				GameModel.PLAYER_CALLED, new Object(), currentRaise));
+				GameModel.PLAYER_CALLED, null, currentRaise));
 		takeAction(true, true);
 	}
 	
@@ -349,7 +349,7 @@ public class Player implements Cloneable, Serializable {
 		printAction("checks");
 		takeAction(true, true);
 		listener.propertyChange(new PropertyChangeEvent(this, 
-				GameModel.PLAYER_CHECKED, new Object(), currentRaise));
+				GameModel.PLAYER_CHECKED, null, currentRaise));
 	}
 	
 	/**
@@ -362,7 +362,7 @@ public class Player implements Cloneable, Serializable {
 		takeAction(true, false);
 		hand.fold();
 		listener.propertyChange(new PropertyChangeEvent(this, 
-				GameModel.PLAYER_FOLDED, new Object(), this));
+				GameModel.PLAYER_FOLDED, null, this));
 	}
 	
 	/**
@@ -652,7 +652,7 @@ public class Player implements Cloneable, Serializable {
 	 */
 	public void printAction(String anAction) {
 		listener.propertyChange(new PropertyChangeEvent(this, GameModel.CHAT_UPDATE,
-				new Object(), name + " " + anAction + " \n"));
+				null, name + " " + anAction + " \n"));
 	}
 	
 	/**
@@ -663,8 +663,10 @@ public class Player implements Cloneable, Serializable {
 	 * @param aSize size associated with action
 	 */
 	public void printAction(String anAction, int aSize) {
-		listener.propertyChange(new PropertyChangeEvent(this, GameModel.CHAT_UPDATE,
-				new Object(), name + " " + anAction + " " + aSize + " \n"));
+		listener.propertyChange(
+				new PropertyChangeEvent(this,
+						GameModel.CHAT_UPDATE, null,
+						name + " " + anAction + " " + aSize + " \n"));
 	}
 
 	/**

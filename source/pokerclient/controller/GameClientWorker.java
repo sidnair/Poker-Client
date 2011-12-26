@@ -41,7 +41,7 @@ public class GameClientWorker implements Runnable {
 		   } catch (IOException e) {
 			   e.printStackTrace();
 			   listener.propertyChange(new PropertyChangeEvent(this, 
-					   GameServer.PLAYER_QUIT, new Object(), player));
+					   GameServer.PLAYER_QUIT, null, player));
 			   player.fold();
 	    	   System.out.println(player.getName() + " quit.");
 	    	   playing = false;

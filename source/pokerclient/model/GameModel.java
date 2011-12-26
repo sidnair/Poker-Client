@@ -468,7 +468,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		while (actionUnclosed() && remainingActiveCount > 1 &&
 				cannotPlayCount < remainingActiveCount && iter.hasNext()) {
 			Player p = iter.next();
-			boolean played = mainLogicBody(p, !othersActionUnclosed(p),
+			boolean played = takePlayerTurn(p, !othersActionUnclosed(p),
 					countOtherAllIns(p));
 			cannotPlayCount = played ? 0 : cannotPlayCount + 1;
 		}
@@ -506,14 +506,14 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		return allIns;
 	}
 
-	private boolean mainLogicBody(Player p, boolean allCalled, int allIns) {
+	private boolean takePlayerTurn(Player p, boolean allCalled, int allIns) {
 		if (!playerCanAct(p, allIns)) {
 			return false;
 		}
 		
 		playerAct(p, allCalled);
-		pots = Pot.generatePots(
-				new HashSet<Player>(allPlayers.getPlayersCopy()));
+		pots = Pot.generatePots(new HashSet<Player>(
+				allPlayers.getPlayersCopy()));
 		
 		return true;
 	}

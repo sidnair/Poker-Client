@@ -46,13 +46,13 @@ public class RaiseButton extends AbstractActionButton implements ChangeListener 
 	public void runAction() {
 		if (raisable) {
 			super.getListener().propertyChange(new PropertyChangeEvent(this,
-					GameView.PLAYER_ACTION, new Object(), new Action(
+					GameView.PLAYER_ACTION, null, new Action(
 							super.getPlayerName(), Action.ActionType.RAISE, 
 							raiseSize)));
 		} else {
 			super.getListener().propertyChange(new PropertyChangeEvent(this,
-					GameView.PLAYER_ACTION, new Object(), new Action(
-							super.getPlayerName(), Action.ActionType.BET, 
+					GameView.PLAYER_ACTION, null,
+					new Action(super.getPlayerName(), Action.ActionType.BET, 
 							raiseSize)));
 		}
 	}
