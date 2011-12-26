@@ -482,11 +482,15 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 			activeStartIndex += getBBOffset();
 		}
 		
+		int cannotPlayCount = 0;
 		remainingActiveCount = allPlayers.inHandCount();
-		
 		Iterator<Player> iter = allPlayers.inHandIterator(activeStartIndex);
-		while (actionUnclosed() && remainingActiveCount > 1 && iter.hasNext()) {
-			mainLogic(iter.next());
+		while (actionUnclosed() && remainingActiveCount > 1 &&
+				cannotPlayCount < remainingActiveCount && iter.hasNext()) {
+			Player p = iter.next();
+			boolean played = mainLogicBody(p, !othersActionUnclosed(p),
+					countOtherAllIns(p));
+			cannotPlayCount = played ? 0 : cannotPlayCount + 1;
 		}
 		for (Player p : allPlayers) {
 			p.resetStreet();
@@ -494,45 +498,52 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 
 	private boolean actionUnclosed() {
-		for (Player p : allPlayers.inHand(0)) {
-			if (!p.isActionClosed()) {
+		return othersActionUnclosed(null);
+	}
+	
+	private boolean othersActionUnclosed(Player p) {
+		for (Player pl : allPlayers.inHand(0)) {
+			if (p != null && pl.equals(p)) {
+				continue;
+			}
+			if (!pl.isActionClosed()) {
 				return true;
 			}
 		}
 		return false;
 	}
-
-	private void mainLogic(Player p) {
-		// call a shove HU
-		boolean allCalled = true;
+	
+	private int countOtherAllIns(Player p) {
 		int allIns = 0;
 		for (Player pl : allPlayers.inHand(0)) {
-			if (!p.equals(pl)) {
-				if (pl.isAllIn()) {
-					allIns++;
-				}
-				if (!pl.isActionClosed()) {
-					allCalled = false;
-				}
+			if (p != null && pl.equals(p)) {
+				continue;
+			}
+			if (pl.isAllIn()) {
+				allIns++;
 			}
 		}
-		mainLogicBody(p, allCalled, allIns);
+		return allIns;
 	}
 
-	private void mainLogicBody(Player p, boolean allCalled, int allIns) {
-		if (playerCanAct(p, allIns)) {
-			playerAct(p, allCalled);
+	private boolean mainLogicBody(Player p, boolean allCalled, int allIns) {
+		if (!playerCanAct(p, allIns)) {
+			return false;
 		}
+		
+		playerAct(p, allCalled);
 		pots = Pot.generatePots(
 				new HashSet<Player>(allPlayers.getPlayersCopy()));
+		
+		return true;
 	}
 
 	private boolean playerCanAct(Player p, int allIns) {
-		return p.isInHand()
-				&& p.hasChips()
-				&& ((remainingActiveCount - allIns > 1) || (remainingActiveCount
-						- allIns >= 1 && (currentRaise
-						- p.getPutInPotOnStreet() > 0)));
+		boolean multipleNotAllIn = remainingActiveCount - allIns > 1;
+		boolean oneNotAllIn = remainingActiveCount - allIns == 1;
+		boolean mustMatchRaise = currentRaise - p.getPutInPotOnStreet() > 0;
+		return p.isInHand() && p.hasChips()
+				&& (multipleNotAllIn || (oneNotAllIn && mustMatchRaise));
 	}
 
 	private void playerAct(Player p, boolean allCalled) {
