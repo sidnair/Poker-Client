@@ -155,7 +155,7 @@ public class Player implements Cloneable, Serializable {
 	 * Tops of stack to the max buy-in if the player is shortstacked.
 	 */
 	private void topOff() {
-		if (!GameModel.TOP_OFF) {
+		if (!settings.isTopOff()) {
 			return;
 		}
 		

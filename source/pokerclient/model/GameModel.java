@@ -25,34 +25,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * Automatically generated serial ID.
 	 */
 	private static final long serialVersionUID = -3228212823720315361L;
-
-	private GameState currentState;
 	
-	private enum Notification {
-		START_OF_TURN, START_OF_STREET, SHOWDOWN, END_OF_HAND, ALL_IN,
-		PLAYER_JOINED;
-	};
-
-	/**
-	 * Index of button
-	 */
-	private int buttonIndex;
-
-	/**
-	 * Count of remaining active players.
-	 */
-	private int remainingActiveCount;
-
-	/**
-	 * Size of current raise.
-	 */
-	private int currentRaise;
-
-	/**
-	 * Size of previous raise.
-	 */
-	private int oldRaise;
-
 	/**
 	 * Used when a player folds.
 	 */
@@ -81,6 +54,26 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 * Used when the model must update the chat in the view.
 	 */
 	public final static String CHAT_UPDATE = "Chat updated";
+	
+	private enum Notification {
+		START_OF_TURN, START_OF_STREET, SHOWDOWN, END_OF_HAND, ALL_IN,
+		PLAYER_JOINED;
+	};
+
+	/**
+	 * Count of remaining active players.
+	 */
+	private int remainingActiveCount;
+
+	/**
+	 * Size of current raise.
+	 */
+	private int currentRaise;
+
+	/**
+	 * Size of previous raise.
+	 */
+	private int oldRaise;
 
 	/**
 	 * Lock used to use conditions for receiving actions and updating the GUI.
@@ -116,8 +109,6 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private Board board;
 
-	public static final boolean TOP_OFF = true;
-
 	/**
 	 * Number of hands that have been played.
 	 */
@@ -139,7 +130,8 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	private ArrayList<Player> toAdd;
 
 	private int MAX_PLAYERS = 6;
-	
+
+	private GameState currentState;
 	
 	private final Street flop;
 	private final Street turn;
@@ -313,9 +305,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 
 	public void updateButton() {
-		buttonIndex++;
+		allPlayers.moveButton();
 		firePropertyChange(GameView.UPDATE_BTN, "",
-				new Integer(buttonIndex % allPlayers.size()));
+				new Integer(allPlayers.getButtonIndex() % allPlayers.size()));
 	}
 	
 	private class Street implements Serializable {
@@ -378,21 +370,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		pause(GameSettings.END_OF_STREET_PAUSE);
 	}
 	
-	private int getSBOffset() {
-		boolean hu = (allPlayers.inHandCount() == 2);
-		return hu ? 0 : 1;
-	}
-	
-	private int getBBOffset() {
-		boolean hu = (allPlayers.inHandCount() == 2);
-		return hu ? 1 : 2;
-	}
-
 	private void payBlinds() {
-		allPlayers.get(buttonIndex + getSBOffset())
-				.paySmallBlind(settings.getSmallBlind());
-		allPlayers.get(buttonIndex + getBBOffset())
-				.payBigBlind(settings.getBigBlind());
+		allPlayers.getSB().paySmallBlind(settings.getSmallBlind());
+		allPlayers.getBB().payBigBlind(settings.getBigBlind());
 	}
 
 	private void payAntes() {
@@ -413,7 +393,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private void dealPreFlop() {
 		deck.shuffle();
-		for (Player p : allPlayers.inHand(buttonIndex + 1)) {
+		for (Player p : allPlayers.inHand()) {
 			Hand h = new Hand();
 			for (int i = 0; i < 2; i++) {
 				h.setCard(i, deck.nextCard());
@@ -477,9 +457,9 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		
 		oldRaise = 0;
 		currentRaise = raiseSize;
-		int activeStartIndex = buttonIndex + 1;
+		int activeStartIndex = allPlayers.getButtonIndex() + 1;
 		if (preFlop) {
-			activeStartIndex += getBBOffset();
+			activeStartIndex += allPlayers.getBBOffset();
 		}
 		
 		int cannotPlayCount = 0;
@@ -502,7 +482,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	}
 	
 	private boolean othersActionUnclosed(Player p) {
-		for (Player pl : allPlayers.inHand(0)) {
+		for (Player pl : allPlayers.inHand()) {
 			if (p != null && pl.equals(p)) {
 				continue;
 			}
@@ -515,7 +495,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	
 	private int countOtherAllIns(Player p) {
 		int allIns = 0;
-		for (Player pl : allPlayers.inHand(0)) {
+		for (Player pl : allPlayers.inHand()) {
 			if (p != null && pl.equals(p)) {
 				continue;
 			}
@@ -595,7 +575,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	 */
 	private boolean isEveryoneAllIn() {
 		int active = 0;
-		for (Player p : allPlayers.inHand(0)) {
+		for (Player p : allPlayers.inHand()) {
 			if (!p.isAllIn()) {
 				active++;
 			}
@@ -608,7 +588,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 	
 	private boolean isHandContested() {
 		int inHand = 0;
-		for (Player p : allPlayers.inHand(0)) {
+		for (Player p : allPlayers.inHand()) {
 			if (p.isInHand()) {
 				inHand++;
 			}
@@ -629,7 +609,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		String toReturn = "";
 		if (aStreet.equals("Pre-flop")) {
 			int seat = 1;
-			for (Player p : allPlayers.inHand(buttonIndex + getSBOffset())) {
+			for (Player p : allPlayers.inHand(allPlayers.getSBIndex())) {
 				chatSeatString(seat, p);
 				seat++;
 			}
@@ -642,7 +622,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		toReturn += "(" + allPlayers.inHandCount() + " Players)" + "\n";
 		if (aStreet.equals("Showdown")) {
 			if (allPlayers.inHandCount() > 1 || isEveryoneAllIn()) {
-				for (Player p : allPlayers.inHand(buttonIndex)) {
+				for (Player p : allPlayers.inHand()) {
 					toReturn += p.getName() + " shows "
 							+ p.getHand().toString() + " for "
 							+ HandRanker.getHandName(p.getHand(), board) + "\n";
@@ -772,7 +752,7 @@ public class GameModel extends AbstractModel implements PropertyChangeListener,
 		} else if (evt.getPropertyName().equals(CHAT_UPDATE)) {
 			updateChat((String) evt.getNewValue());
 		} else if (evt.getPropertyName().equals(GameView.PLAYER_ACTION)) {
-			for (Player p : allPlayers.inHand(0)) {
+			for (Player p : allPlayers.inHand()) {
 				Action action = (Action) evt.getNewValue();
 				if (p.getName().equals(action.getPlayerName())) {
 					takeAction(p, action);

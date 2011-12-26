@@ -12,6 +12,8 @@ public class Players implements Iterable<Player>, Serializable {
 	private static final long serialVersionUID = 8437955403272755772L;
 	
 	private ArrayList<Player> players;
+	
+	private int buttonIndex;
 
 	public Players() {
 		players = new ArrayList<Player>();
@@ -66,6 +68,7 @@ public class Players implements Iterable<Player>, Serializable {
 		return players.iterator();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public ArrayList<Player> getPlayersCopy() {
 		return (ArrayList<Player>) players.clone();
 	}
@@ -106,9 +109,50 @@ public class Players implements Iterable<Player>, Serializable {
 		}
 		return inHandPlayers;
 	}
+	
+	/*
+	 * Returns a list of players in the order in which they would have to act.
+	 */
+	public ArrayList<Player> inHand() {
+		return inHand(buttonIndex + 1);
+	}
 
 	public int indexOf(Player active) {
 		return players.indexOf(active);
+	}
+	
+	public void moveButton() {
+		buttonIndex++;
+	}
+	
+	public int getButtonIndex() {
+		return buttonIndex;
+	}
+	
+	public Player getSB() {
+		return get(getSBIndex());
+	}
+	
+	public Player getBB() {
+		return get(getBBIndex());
+	}
+	
+	public int getSBIndex() {
+		return buttonIndex + getSBOffset();
+	}
+	
+	public int getBBIndex() {
+		return buttonIndex + getBBOffset();
+	}
+	
+	public int getSBOffset() {
+		boolean hu = (this.inHandCount() == 2);
+		return hu ? 0 : 1;
+	}
+	
+	public int getBBOffset() {
+		boolean hu = (this.inHandCount() == 2);
+		return hu ? 1 : 2;
 	}
 
 }
